@@ -17,6 +17,7 @@ model User {
     referredById   String?
     referralLevel  Int     @default(1)
     isBanned       Boolean @default(false)
+    referralCode   String  @unique @default("")
 
     referredBy User?  @relation("UserReferrals", fields: [referredById], references: [id])
     referrals  User[] @relation("UserReferrals")
