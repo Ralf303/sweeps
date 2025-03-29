@@ -37,7 +37,7 @@ export class AuthService {
     return referralCode;
   }
 
-  async validateUser(email: string, password: string) {
+  public async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -48,14 +48,14 @@ export class AuthService {
     return { id: user.id, email: user.email, nickname: user.nickname };
   }
 
-  async login(email: string, password: string) {
+  public async login(email: string, password: string) {
     const user = await this.validateUser(email, password);
     return {
       access_token: this.jwtService.sign(user),
     };
   }
 
-  async register(
+  public async register(
     email: string,
     password: string,
     nickname: string,
