@@ -49,7 +49,7 @@ export class BannerController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: './uploads/banners',
+        destination: '/var/www/uploads/banners/',
         filename: (
           _: any,
           file: { originalname: string },
