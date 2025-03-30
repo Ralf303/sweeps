@@ -12,6 +12,7 @@ model User {
     nickname       String  @unique
     email          String  @unique
     password       String
+    role           String  @default("user")
     balance        Float   @default(0)
     referralsCount Int     @default(0)
     referredById   String?
@@ -24,4 +25,15 @@ model User {
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+}
+
+model Banner {
+    id          String @id @default(uuid())
+    title       String
+    description String
+    buttonText  String
+    buttonLink  String
+    imageUrl    String
+
+    createdAt DateTime @default(now())
 }

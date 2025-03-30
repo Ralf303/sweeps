@@ -18,6 +18,11 @@ export class UserService {
         nickname: true,
         referralCode: true,
         referralsCount: true,
+        balance: true,
+        isBanned: true,
+        role: true,
+        referralLevel: true,
+        referrals: true,
       },
     });
 
