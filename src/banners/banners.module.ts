@@ -8,7 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 @Module({
   imports: [
     MulterModule.register({
-      dest: './uploads/banners',
+      dest: '/var/www/uploads/banners/',
     }),
   ],
   controllers: [BannerController],
