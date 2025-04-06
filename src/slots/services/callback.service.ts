@@ -13,7 +13,8 @@ export class CallbackService {
     // Логика обработки запроса баланса
     const balance = await this.getUserBalance(data.player_id, data.currency);
     console.log(`Balance for player ${data.player_id}: ${balance}`);
-    return balance;
+
+    return { balance: balance.toFixed(2) };
   }
 
   async handleBet(data: BetCallbackDto) {
@@ -24,8 +25,9 @@ export class CallbackService {
     //   data.amount,
     //   data.transaction_id,
     // );
+    const balance = 5000;
     return {
-      balance: 5000,
+      balance: balance.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
@@ -38,8 +40,9 @@ export class CallbackService {
     //   data.amount,
     //   data.transaction_id,
     // );
+    const balance = data.amount;
     return {
-      balance: 5000,
+      balance: balance.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
@@ -53,8 +56,9 @@ export class CallbackService {
     //   data.transaction_id,
     //   data.bet_transaction_id,
     // );
+    const balance = data.amount;
     return {
-      balance: 5000,
+      balance: balance.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
@@ -66,8 +70,9 @@ export class CallbackService {
     //   data.currency,
     //   data.rollback_transactions,
     // );
+    const balance = 5000;
     return {
-      balance: 5000,
+      balance: balance.toFixed(2),
       transaction_id: data.transaction_id,
       rollback_transactions: data.rollback_transactions.map((transaction) => ({
         action: transaction.action,
