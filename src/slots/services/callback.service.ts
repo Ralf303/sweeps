@@ -14,8 +14,14 @@ export class CallbackService {
 
   async handleBalance(data: BalanceCallbackDto) {
     // Логика получения баланса
+    console.log(data.player_id);
+
     const user = await this.userService.getCurrentUser(data.player_id);
+    console.log(user);
+
     const balance = user.balance;
+
+    console.log(balance.toFixed(2));
 
     return { balance: balance.toFixed(2) };
   }
