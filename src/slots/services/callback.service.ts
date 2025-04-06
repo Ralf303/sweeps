@@ -12,7 +12,8 @@ export class CallbackService {
   async handleBalance(data: BalanceCallbackDto) {
     // Логика обработки запроса баланса
     const balance = await this.getUserBalance(data.player_id, data.currency);
-    return { balance };
+    console.log(`Balance for player ${data.player_id}: ${balance}`);
+    return { balance: balance };
   }
 
   async handleBet(data: BetCallbackDto) {
