@@ -6,26 +6,25 @@ import {
   RefundCallbackDto,
   RollbackCallbackDto,
 } from '../dto/callback.dto';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class CallbackService {
+  constructor(private userService: UserService) {}
+
   async handleBalance(data: BalanceCallbackDto) {
-    // Логика обработки запроса баланса
-    const balance = await this.getUserBalance(data.player_id, data.currency);
-    console.log(`Balance for player ${data.player_id}: ${balance.toFixed(2)}`);
+    // Логика получения баланса
+    const user = await this.userService.getCurrentUser(data.player_id);
+    const balance = user.balance;
 
     return { balance: balance.toFixed(2) };
   }
 
   async handleBet(data: BetCallbackDto) {
     // Логика обработки ставки
-    // const newBalance = await this.processBet(
-    //   data.player_id,
-    //   data.currency,
-    //   data.amount,
-    //   data.transaction_id,
-    // );
-    const balance = 5000;
+
+    const user = await this.userService.getCurrentUser(data.player_id);
+    const balance = user.balance - Number(data.amount);
     return {
       balance: balance.toFixed(2),
       transaction_id: data.transaction_id,
@@ -34,13 +33,13 @@ export class CallbackService {
 
   async handleWin(data: WinCallbackDto) {
     // Логика обработки выигрыша
-    // const newBalance = await this.processWin(
-    //   data.player_id,
-    //   data.currency,
-    //   data.amount,
-    //   data.transaction_id,
-    // );
-    const balance = data.amount;
+
+    const user = await this.userService.getCurrentUser(data.player_id);
+
+    const { balance } = await this.userService.updateBalance(
+      data.player_id,
+      user.balance + Number(data.amount),
+    );
     return {
       balance: balance.toFixed(2),
       transaction_id: data.transaction_id,
@@ -49,14 +48,13 @@ export class CallbackService {
 
   async handleRefund(data: RefundCallbackDto) {
     // Логика обработки возврата
-    // const newBalance = await this.processRefund(
-    //   data.player_id,
-    //   data.currency,
-    //   data.amount,
-    //   data.transaction_id,
-    //   data.bet_transaction_id,
-    // );
-    const balance = data.amount;
+
+    const user = await this.userService.getCurrentUser(data.player_id);
+
+    const { balance } = await this.userService.updateBalance(
+      data.player_id,
+      user.balance + Number(data.amount),
+    );
     return {
       balance: balance.toFixed(2),
       transaction_id: data.transaction_id,
@@ -65,14 +63,11 @@ export class CallbackService {
 
   async handleRollback(data: RollbackCallbackDto) {
     // Логика обработки отката
-    // const result = await this.processRollback(
-    //   data.player_id,
-    //   data.currency,
-    //   data.rollback_transactions,
-    // );
-    const balance = 5000;
+
+    const user = await this.userService.getCurrentUser(data.player_id);
+
     return {
-      balance: balance.toFixed(2),
+      balance: user.balance.toFixed(2),
       transaction_id: data.transaction_id,
       rollback_transactions: data.rollback_transactions.map((transaction) => ({
         action: transaction.action,
@@ -81,17 +76,4 @@ export class CallbackService {
       })),
     };
   }
-
-  private async getUserBalance(
-    playerId: string,
-    currency: string,
-  ): Promise<number> {
-    console.log(
-      `Fetching balance for player ${playerId} in currency ${currency}`,
-    );
-
-    return 5000.0; // Пример
-  }
-
-  // Другие приватные методы для работы с балансом...
 }
