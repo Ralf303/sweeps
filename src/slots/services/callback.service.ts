@@ -30,7 +30,11 @@ export class CallbackService {
     // Логика обработки ставки
 
     const user = await this.userService.getCurrentUser(data.player_id);
-    const balance = user.balance - Number(data.amount);
+
+    const { balance } = await this.userService.updateBalance(
+      data.player_id,
+      user.balance - Number(data.amount),
+    );
     return {
       balance: balance.toFixed(2),
       transaction_id: data.transaction_id,

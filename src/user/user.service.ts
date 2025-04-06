@@ -11,8 +11,6 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   async getCurrentUser(userId: string) {
-    console.log(userId);
-
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
