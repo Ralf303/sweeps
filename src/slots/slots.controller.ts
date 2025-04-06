@@ -78,14 +78,19 @@ export class SlotsController {
 
       switch (body.action) {
         case 'balance':
+          this.logger.log('Balance action');
           return this.callbackService.handleBalance(body);
         case 'bet':
+          this.logger.log('Bet action');
           return this.callbackService.handleBet(body);
         case 'win':
+          this.logger.log('Win action');
           return this.callbackService.handleWin(body);
         case 'refund':
+          this.logger.log('Refund action');
           return this.callbackService.handleRefund(body);
         case 'rollback':
+          this.logger.log('Rollback action');
           return this.callbackService.handleRollback(body);
         default:
           throw new HttpException(
