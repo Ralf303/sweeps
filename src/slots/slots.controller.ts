@@ -11,12 +11,20 @@ import {
   Query,
 } from '@nestjs/common';
 import { SlotegratorService } from './services/slotegrator.service';
-import { InitDemoGameDto } from './dto/init.demo.game.dto';
+import { InitDemoGameDto, InitGameDto } from './dto/init.demo.game.dto';
 import * as path from 'path';
 import * as fs from 'fs';
 import { CallbackService } from './services/callback.service';
 import { SignatureService } from './services/signature.service';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiOkResponse,
+  ApiBadRequestResponse,
+} from '@nestjs/swagger';
 
+@ApiTags('Slotegrator Integration')
 @Controller('slots')
 export class SlotsController {
   constructor(
@@ -113,12 +121,104 @@ export class SlotsController {
   }
 
   @Post('init-demo')
+  @ApiOperation({
+    summary: 'Initialize demo game session',
+    description: 'Creates demo session and returns game URL',
+  })
+  @ApiBody({
+    type: InitDemoGameDto,
+    examples: {
+      desktopDemo: {
+        value: {
+          game_uuid: 'game_123',
+          device: 'desktop',
+          return_url: 'https://example.com/return',
+          language: 'en',
+        },
+      },
+      mobileDemo: {
+        value: {
+          game_uuid: 'game_456',
+          device: 'mobile',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Game launch URL',
+    schema: {
+      example: {
+        url: 'https://games.slotegrator.com/demo?token=demo_123',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid request data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Validation failed',
+        error: 'Bad Request',
+      },
+    },
+  })
   async initDemoGame(@Body() body: InitDemoGameDto) {
     return this.slotegratorService.initDemoGame(body);
   }
 
   @Post('init')
-  async initGame(@Body() body: any) {
+  @ApiOperation({
+    summary: 'Initialize real money game session',
+    description: 'Creates real money session and returns game URL',
+  })
+  @ApiBody({
+    type: InitGameDto,
+    examples: {
+      standardInit: {
+        value: {
+          game_uuid: 'game_789',
+          player_id: 'player_123',
+          player_name: 'JohnDoe',
+          currency: 'USD',
+          session_id: 'session_456',
+          device: 'mobile',
+          return_url: 'https://example.com/return',
+          language: 'en',
+        },
+      },
+      fullInit: {
+        value: {
+          game_uuid: 'game_789',
+          player_id: 'player_123',
+          player_name: 'JohnDoe',
+          currency: 'USD',
+          session_id: 'session_456',
+          device: 'mobile',
+          return_url: 'https://example.com/return',
+          language: 'en',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Game launch URL',
+    schema: {
+      example: {
+        url: 'https://games.slotegrator.com/play?token=real_456',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid request data',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['player_id should not be empty'],
+        error: 'Bad Request',
+      },
+    },
+  })
+  async initGame(@Body() body: InitGameDto) {
     return this.slotegratorService.initGame(body);
   }
 }
