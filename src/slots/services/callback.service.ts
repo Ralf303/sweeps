@@ -13,7 +13,7 @@ export class CallbackService {
     // Логика обработки запроса баланса
     const balance = await this.getUserBalance(data.player_id, data.currency);
     console.log(`Balance for player ${data.player_id}: ${balance}`);
-    return { balance: balance };
+    return balance;
   }
 
   async handleBet(data: BetCallbackDto) {
