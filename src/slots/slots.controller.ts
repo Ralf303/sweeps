@@ -1,13 +1,64 @@
-import { Controller, Post, Body, Logger } from '@nestjs/common';
-import * as fs from 'fs';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpException,
+  HttpStatus,
+  Logger,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { SlotegratorService } from './services/slotegrator.service';
+import { InitDemoGameDto } from './dto/init.demo.game.dto';
 import * as path from 'path';
+import * as fs from 'fs';
+import { CallbackService } from './services/callback.service';
+import { SignatureService } from './services/signature.service';
 
 @Controller('slots')
 export class SlotsController {
+  constructor(
+    private readonly slotegratorService: SlotegratorService,
+    private readonly callbackService: CallbackService,
+    private readonly signatureService: SignatureService,
+  ) {}
   private readonly logger = new Logger(SlotsController.name);
 
+  private validateSignature(headers: Record<string, string>, body: any) {
+    const merchantId = headers['x-merchant-id'];
+    const timestamp = headers['x-timestamp'];
+    const nonce = headers['x-nonce'];
+    const sign = headers['x-sign'];
+
+    const authHeaders = {
+      'X-Merchant-Id': merchantId,
+      'X-Timestamp': timestamp,
+      'X-Nonce': nonce,
+    };
+
+    const isValid = this.signatureService.validateSignature(
+      body,
+      authHeaders,
+      sign,
+    );
+
+    if (!isValid) {
+      throw new HttpException(
+        {
+          error_code: 'INVALID_SIGNATURE',
+          error_description: 'Signature validation failed',
+        },
+        HttpStatus.OK,
+      );
+    }
+  }
+
   @Post('webhook')
-  async handleWebhook(@Body() body: any) {
+  async handleWebhook(
+    @Body() body: any,
+    @Headers() headers: Record<string, string>,
+  ) {
     try {
       const logsDir = path.join(process.cwd(), 'logs');
       if (!fs.existsSync(logsDir)) {
@@ -21,10 +72,46 @@ export class SlotsController {
       fs.writeFileSync(filePath, JSON.stringify(body, null, 2));
 
       this.logger.log(`Webhook saved to ${filePath}`);
-      return { success: true, message: 'Webhook received and saved' };
+      this.validateSignature(headers, body);
+
+      switch (body.action) {
+        case 'balance':
+          return this.callbackService.handleBalance(body);
+        case 'bet':
+          return this.callbackService.handleBet(body);
+        case 'win':
+          return this.callbackService.handleWin(body);
+        case 'refund':
+          return this.callbackService.handleRefund(body);
+        case 'rollback':
+          return this.callbackService.handleRollback(body);
+        default:
+          throw new HttpException(
+            {
+              error_code: 'INVALID_ACTION',
+              error_description: 'Unknown action type',
+            },
+            HttpStatus.OK,
+          );
+      }
     } catch (error) {
       this.logger.error('Error saving webhook', error);
       throw error;
     }
+  }
+
+  @Get('games')
+  async getGames(@Query() query: any): Promise<any> {
+    return this.slotegratorService.getGames(query);
+  }
+
+  @Post('init-demo')
+  async initDemoGame(@Body() body: InitDemoGameDto) {
+    return this.slotegratorService.initDemoGame(body);
+  }
+
+  @Post('init')
+  async initGame(@Body() body: any) {
+    return this.slotegratorService.initGame(body);
   }
 }
