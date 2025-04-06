@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
   HttpException,
   HttpStatus,
   Logger,
@@ -54,6 +55,7 @@ export class SlotsController {
     }
   }
 
+  @HttpCode(200)
   @Post('webhook')
   async handleWebhook(
     @Body() body: any,
