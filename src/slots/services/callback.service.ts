@@ -25,7 +25,7 @@ export class CallbackService {
     //   data.transaction_id,
     // );
     return {
-      balance: 100,
+      balance: 5000,
       transaction_id: data.transaction_id,
     };
   }
@@ -39,7 +39,7 @@ export class CallbackService {
     //   data.transaction_id,
     // );
     return {
-      balance: 100,
+      balance: 5000,
       transaction_id: data.transaction_id,
     };
   }
@@ -54,7 +54,7 @@ export class CallbackService {
     //   data.bet_transaction_id,
     // );
     return {
-      balance: 100,
+      balance: 5000,
       transaction_id: data.transaction_id,
     };
   }
@@ -67,7 +67,7 @@ export class CallbackService {
     //   data.rollback_transactions,
     // );
     return {
-      balance: 100,
+      balance: 5000,
       transaction_id: data.transaction_id,
       rollback_transactions: data.rollback_transactions.map((transaction) => ({
         action: transaction.action,
@@ -85,7 +85,7 @@ export class CallbackService {
       `Fetching balance for player ${playerId} in currency ${currency}`,
     );
 
-    return 100.0; // Пример
+    return 5000.0; // Пример
   }
 
   // Другие приватные методы для работы с балансом...
