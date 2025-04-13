@@ -37,3 +37,14 @@ model Banner {
 
     createdAt DateTime @default(now())
 }
+
+model News {
+    id          String @id @default(uuid())
+    title       String
+    description String
+    buttonText  String
+    buttonLink  String
+    imageUrl    String
+
+    createdAt DateTime @default(now())
+}
