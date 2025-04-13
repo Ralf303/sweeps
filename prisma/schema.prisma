@@ -42,9 +42,15 @@ model News {
     id          String @id @default(uuid())
     title       String
     description String
-    buttonText  String
-    buttonLink  String
     imageUrl    String
+
+    createdAt DateTime @default(now())
+}
+
+model faq {
+    id          String @id @default(uuid())
+    title       String
+    description String
 
     createdAt DateTime @default(now())
 }

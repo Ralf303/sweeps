@@ -38,8 +38,6 @@ export class NewsController {
       properties: {
         title: { type: 'string' },
         description: { type: 'string' },
-        buttonText: { type: 'string' },
-        buttonLink: { type: 'string' },
         image: { type: 'string', format: 'binary' },
       },
     },
