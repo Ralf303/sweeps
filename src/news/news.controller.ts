@@ -8,6 +8,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -67,6 +68,18 @@ export class NewsController {
   @Get()
   getAllNews() {
     return this.newsService.getAllNews();
+  }
+
+  @ApiOperation({ summary: 'Get news by id' })
+  @Get(':id')
+  getNewsById(@Param('id') id: string) {
+    return this.newsService.getNewsById(id);
+  }
+
+  @ApiOperation({ summary: 'Search news by title' })
+  @Get('search')
+  searchNews(@Query('q') query: string) {
+    return this.newsService.searchNews(query);
   }
 
   @ApiOperation({ summary: 'Delete a news (Admin only)' })

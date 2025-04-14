@@ -23,6 +23,27 @@ export class NewsService {
     return this.prisma.news.findMany();
   }
 
+  async searchNews(query: string) {
+    return this.prisma.news.findMany({
+      where: {
+        title: {
+          contains: query,
+          mode: 'insensitive',
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async getNewsById(id: string) {
+    const news = await this.prisma.news.findUnique({ where: { id } });
+    if (!news) throw new NotFoundException('News not found');
+
+    return news;
+  }
+
   async deleteNews(id: string) {
     const news = await this.prisma.news.findUnique({ where: { id } });
     if (!news) throw new NotFoundException('News not found');
