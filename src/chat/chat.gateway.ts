@@ -8,7 +8,7 @@ import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { Server } from 'socket.io';
 
-@WebSocketGateway({ namespace: '/chat' })
+@WebSocketGateway({ namespace: '/chat', path: '/chat' })
 export class ChatGateway {
   @WebSocketServer() server: Server;
 
