@@ -35,15 +35,35 @@ export class ChatService {
     return messages;
   }
 
-  async clearChat(userId: string) {
-    console.log('Clearing chat for user:', userId);
+  // async clearChat(userId: string) {
+  //   console.log('Clearing chat for user:', userId);
+  //   const user = await this.prisma.user.findUnique({
+  //     where: { id: userId },
+  //   });
+  //   if (!user || user.role !== 'admin') {
+  //     throw new UnauthorizedException('Only admins can clear the chat.');
+  //   }
+  //   await this.prisma.chatMessage.deleteMany({});
+  //   return { message: 'Chat cleared successfully.' };
+  // }
+
+  async deleteMessage(messageId: string, userId: string) {
+    console.log('Deleting message:', messageId, 'for user:', userId);
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+    });
+    if (!message) {
+      throw new Error('Message not found');
+    }
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
     if (!user || user.role !== 'admin') {
-      throw new UnauthorizedException('Only admins can clear the chat.');
+      throw new UnauthorizedException('Only admins can delete message.');
     }
-    await this.prisma.chatMessage.deleteMany({});
-    return { message: 'Chat cleared successfully.' };
+    await this.prisma.chatMessage.delete({
+      where: { id: messageId },
+    });
+    return { message: 'Message deleted successfully.' };
   }
 }

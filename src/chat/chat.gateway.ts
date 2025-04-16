@@ -21,10 +21,22 @@ export class ChatGateway {
     return message;
   }
 
-  @SubscribeMessage('clearChat')
-  async handleClearChat(@MessageBody() payload: { userId: string }) {
-    const result = await this.chatService.clearChat(payload.userId);
-    this.server.emit('chatCleared');
+  // @SubscribeMessage('clearChat')
+  // async handleClearChat(@MessageBody() payload: { userId: string }) {
+  //   const result = await this.chatService.clearChat(payload.userId);
+  //   this.server.emit('chatCleared');
+  //   return result;
+  // }
+
+  @SubscribeMessage('deleteMessage')
+  async handleDeleteMessage(
+    @MessageBody() payload: { messageId: string; userId: string },
+  ) {
+    const result = await this.chatService.deleteMessage(
+      payload.messageId,
+      payload.userId,
+    );
+    this.server.emit('messageDeleted', payload.messageId);
     return result;
   }
 }
