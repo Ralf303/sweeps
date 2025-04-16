@@ -20,12 +20,29 @@ model User {
     isBanned       Boolean @default(false)
     referralCode   String  @unique @default("")
 
-    referredBy User?  @relation("UserReferrals", fields: [referredById], references: [id])
-    referrals  User[] @relation("UserReferrals")
+    referredBy  User?         @relation("UserReferrals", fields: [referredById], references: [id])
+    referrals   User[]        @relation("UserReferrals")
+    Transaction Transaction[]
 
     createdAt   DateTime      @default(now())
     updatedAt   DateTime      @updatedAt
     ChatMessage ChatMessage[]
+}
+
+model Transaction {
+    id               String @id @default(uuid())
+    userId           String
+    changellyOrderId String
+    amountFrom       Float
+    currencyFrom     String
+    amountTo         Float?
+    currencyTo       String
+    status           String @default("pending")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user User @relation(fields: [userId], references: [id])
 }
 
 model Banner {
