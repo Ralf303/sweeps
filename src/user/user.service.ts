@@ -14,6 +14,7 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
+        id: true,
         email: true,
         nickname: true,
         referralCode: true,
