@@ -55,12 +55,20 @@ export class ChatService {
     if (!message) {
       throw new Error('Message not found');
     }
+
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-    if (!user || user.role !== 'admin') {
-      throw new UnauthorizedException('Only admins can delete message.');
+    if (!user) {
+      throw new UnauthorizedException('User not found.');
     }
+
+    if (user.role !== 'admin' && message.userId !== userId) {
+      throw new UnauthorizedException(
+        'You are not authorized to delete this message.',
+      );
+    }
+
     await this.prisma.chatMessage.delete({
       where: { id: messageId },
     });
