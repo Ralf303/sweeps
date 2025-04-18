@@ -4,6 +4,10 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ReferalService {
+constructor(
+    private prisma: PrismaService,
+  ) {}
+  
   private readonly logger = new Logger(ReferalService.name);
 
   private getCommissionRate(level: number): number {
