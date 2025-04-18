@@ -8,17 +8,19 @@ datasource db {
 }
 
 model User {
-    id             String  @id @default(uuid())
-    nickname       String  @unique
-    email          String  @unique
-    password       String
-    role           String  @default("user")
-    balance        Float   @default(0)
-    referralsCount Int     @default(0)
-    referredById   String?
-    referralLevel  Int     @default(1)
-    isBanned       Boolean @default(false)
-    referralCode   String  @unique @default("")
+    id              String  @id @default(uuid())
+    nickname        String  @unique
+    email           String  @unique
+    password        String
+    role            String  @default("user")
+    balance         Float   @default(0)
+    referralsCount  Int     @default(0)
+    referredById    String?
+    referralLevel   Int     @default(1)
+    dailyLose       Int     @default(0)
+    referralAllLose Int     @default(1)
+    isBanned        Boolean @default(false)
+    referralCode    String  @unique @default("")
 
     referredBy  User?         @relation("UserReferrals", fields: [referredById], references: [id])
     referrals   User[]        @relation("UserReferrals")

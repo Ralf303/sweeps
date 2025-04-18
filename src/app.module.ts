@@ -7,9 +7,12 @@ import { SlotsModule } from './slots/slots.module';
 import { NewsModule } from './news/news.module';
 import { FaqModule } from './faq/faq.module';
 import { ChatModule } from './chat/chat.module';
+import { ReferalModule } from './referal/referal.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     UserModule,
@@ -18,6 +21,7 @@ import { ChatModule } from './chat/chat.module';
     NewsModule,
     FaqModule,
     ChatModule,
+    ReferalModule,
   ],
 })
 export class AppModule {}

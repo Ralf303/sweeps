@@ -5,26 +5,15 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async getCurrentUser(userId: string) {
+  async getCurrentUser(userId: string): Promise<User | { balance: number }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        nickname: true,
-        referralCode: true,
-        referralsCount: true,
-        balance: true,
-        isBanned: true,
-        role: true,
-        referralLevel: true,
-        referrals: true,
-      },
     });
 
     if (!user) return { balance: 0 };
@@ -80,5 +69,40 @@ export class UserService {
       where: { id },
       data: { balance: amount },
     });
+  }
+
+  async updateDailyLose(id: string, amount: number) {
+    if (amount < 0) {
+      throw new BadRequestException('Daily lose cannot be negative');
+    }
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { dailyLose: amount },
+    });
+  }
+
+  async getUsers(options: { startIndex?: number; isBanned?: boolean }) {
+    const take = 100;
+    const skip = options.startIndex || 0;
+
+    return this.prisma.user.findMany({
+      skip,
+      take,
+      where: options.isBanned ? { isBanned: true } : undefined,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getUserStats() {
+    const [totalUsers, bannedUsers] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { isBanned: true } }),
+    ]);
+
+    return {
+      totalUsers,
+      bannedUsers,
+    };
   }
 }

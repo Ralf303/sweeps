@@ -23,31 +23,48 @@ export class CallbackService {
   }
 
   async handleBet(data: BetCallbackDto) {
-    // Логика обработки ставки
-
     const user = await this.userService.getCurrentUser(data.player_id);
+    const betAmount = Number(data.amount);
 
-    const { balance } = await this.userService.updateBalance(
+    // Обновляем баланс
+    await this.userService.updateBalance(
       data.player_id,
-      user.balance - Number(data.amount),
+      user.balance - betAmount,
     );
+
+    if ('dailyLose' in user) {
+      const newDailyLose = user.dailyLose + betAmount;
+      await this.userService.updateDailyLose(data.player_id, newDailyLose);
+    } else {
+      throw new Error('User does not have a dailyLose property');
+    }
+
     return {
-      balance: balance.toFixed(2),
+      balance: (user.balance - betAmount).toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
 
   async handleWin(data: WinCallbackDto) {
-    // Логика обработки выигрыша
-
     const user = await this.userService.getCurrentUser(data.player_id);
+    const winAmount = Number(data.amount);
 
-    const { balance } = await this.userService.updateBalance(
+    if ('dailyLose' in user) {
+      let newDailyLose = user.dailyLose - winAmount;
+      if (newDailyLose < 0) newDailyLose = 0;
+
+      await this.userService.updateDailyLose(data.player_id, newDailyLose);
+    } else {
+      throw new Error('User does not have a dailyLose property');
+    }
+
+    await this.userService.updateBalance(
       data.player_id,
-      user.balance + Number(data.amount),
+      user.balance + winAmount,
     );
+
     return {
-      balance: balance.toFixed(2),
+      balance: (user.balance + winAmount).toFixed(2),
       transaction_id: data.transaction_id,
     };
   }

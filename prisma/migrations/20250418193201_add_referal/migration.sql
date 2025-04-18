@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "referalDalyLose" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "referralAllLose" INTEGER NOT NULL DEFAULT 1;
