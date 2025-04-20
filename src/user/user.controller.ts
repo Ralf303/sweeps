@@ -25,6 +25,30 @@ import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @ApiOperation({ summary: 'Get user statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'User statistics (total and banned)',
+  })
+  @Get('stats')
+  getUserStats() {
+    return this.userService.getUserStats();
+  }
+
+  @ApiOperation({
+    summary: 'Get list of users with optional pagination and ban filter',
+  })
+  @ApiResponse({ status: 200, description: 'List of users' })
+  @Get()
+  getUsers(
+    @Query('start') start: string,
+    @Query('bannedOnly') bannedOnly: string,
+  ) {
+    const startIndex = parseInt(start) || 0;
+    const isBanned = bannedOnly === 'true';
+    return this.userService.getUsers({ startIndex, isBanned });
+  }
+
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: 200, description: 'User data' })
   @Get('me')
@@ -68,29 +92,5 @@ export class UserController {
     @Body() updateBalanceDto: UpdateBalanceDto,
   ) {
     return this.userService.updateBalance(id, updateBalanceDto.amount);
-  }
-
-  @ApiOperation({
-    summary: 'Get list of users with optional pagination and ban filter',
-  })
-  @ApiResponse({ status: 200, description: 'List of users' })
-  @Get()
-  getUsers(
-    @Query('start') start: string,
-    @Query('bannedOnly') bannedOnly: string,
-  ) {
-    const startIndex = parseInt(start) || 0;
-    const isBanned = bannedOnly === 'true';
-    return this.userService.getUsers({ startIndex, isBanned });
-  }
-
-  @ApiOperation({ summary: 'Get user statistics' })
-  @ApiResponse({
-    status: 200,
-    description: 'User statistics (total and banned)',
-  })
-  @Get('stats')
-  getUserStats() {
-    return this.userService.getUserStats();
   }
 }
