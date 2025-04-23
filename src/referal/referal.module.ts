@@ -4,7 +4,6 @@ import { ReferalController } from './referal.controller';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
-  imports: [PrismaService],
   controllers: [ReferalController],
   providers: [ReferalService],
 })
