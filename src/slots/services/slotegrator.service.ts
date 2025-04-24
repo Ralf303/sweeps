@@ -77,4 +77,14 @@ export class SlotegratorService {
       });
     }
   }
+
+  async getValidate(): Promise<any> {
+    const { headers } = this.signatureService.generateHeaders();
+    const response = await firstValueFrom(
+      this.httpService.post(`${this.apiUrl}/validate`, {
+        headers,
+      }),
+    );
+    return response.data;
+  }
 }

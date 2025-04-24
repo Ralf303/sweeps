@@ -221,4 +221,10 @@ export class SlotsController {
   async initGame(@Body() body: InitGameDto) {
     return this.slotegratorService.initGame(body);
   }
+
+  @Post('self-validate')
+  @HttpCode(200)
+  async getValidate() {
+    return this.slotegratorService.getValidate();
+  }
 }

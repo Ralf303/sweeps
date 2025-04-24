@@ -9,6 +9,7 @@ import { FaqModule } from './faq/faq.module';
 import { ChatModule } from './chat/chat.module';
 import { ReferalModule } from './referal/referal.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { CryptoModule } from './crypto/crypto.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     FaqModule,
     ChatModule,
     ReferalModule,
+    CryptoModule,
   ],
 })
 export class AppModule {}
