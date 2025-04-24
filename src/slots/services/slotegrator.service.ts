@@ -80,10 +80,9 @@ export class SlotegratorService {
 
   async getValidate(): Promise<any> {
     const { headers } = this.signatureService.generateHeaders();
+
     const response = await firstValueFrom(
-      this.httpService.post(`${this.apiUrl}/self-validate`, {
-        headers,
-      }),
+      this.httpService.post(`${this.apiUrl}/self-validate`, {}, { headers }),
     );
     return response.data;
   }
