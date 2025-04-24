@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
   BalanceCallbackDto,
   BetCallbackDto,
@@ -12,91 +12,207 @@ import { UserService } from 'src/user/user.service';
 export class CallbackService {
   constructor(private userService: UserService) {}
 
+  private async isTransactionProcessed(
+    transactionId: string,
+  ): Promise<boolean> {
+    const tx = await this.userService.findTransaction(transactionId);
+    return !!tx && !tx.rolled_back;
+  }
+
   async handleBalance(data: BalanceCallbackDto) {
-    // Логика получения баланса
-
     const user = await this.userService.getCurrentUser(data.player_id);
-
-    const balance = user.balance;
-
-    return { balance: balance.toFixed(2) };
+    return { balance: user.balance.toFixed(2) };
   }
 
   async handleBet(data: BetCallbackDto) {
+    // Проверка дубликата
+    if (await this.isTransactionProcessed(data.transaction_id)) {
+      throw new HttpException(
+        {
+          error_code: 'DUPLICATE_TRANSACTION',
+          error_description: 'Transaction already processed',
+        },
+        HttpStatus.OK,
+      );
+    }
+
     const user = await this.userService.getCurrentUser(data.player_id);
     const betAmount = Number(data.amount);
 
-    // Обновляем баланс
-    await this.userService.updateBalance(
-      data.player_id,
-      user.balance - betAmount,
-    );
+    // Проверка на нулевую/отрицательную ставку
+    if (betAmount <= 0) {
+      return {
+        balance: user.balance.toFixed(2),
+        transaction_id: data.transaction_id,
+      };
+    }
 
+    // Проверка достаточности баланса
+    if (user.balance < betAmount) {
+      throw new HttpException(
+        {
+          error_code: 'INSUFFICIENT_FUNDS',
+          error_description: 'Not enough balance',
+        },
+        HttpStatus.OK,
+      );
+    }
+
+    // Обновляем баланс и сохраняем транзакцию
+    const newBalance = user.balance - betAmount;
+    await this.userService.updateBalance(data.player_id, newBalance);
+    await this.userService.saveTransaction({
+      player_id: data.player_id,
+      transaction_id: data.transaction_id,
+      action: 'bet',
+      amount: betAmount,
+      round_id: data.round_id,
+      game_uuid: data.game_uuid,
+    });
+
+    // Обновляем dailyLose (если нужно)
     if ('dailyLose' in user) {
-      const newDailyLose = user.dailyLose + betAmount;
-      await this.userService.updateDailyLose(data.player_id, newDailyLose);
-    } else {
-      throw new Error('User does not have a dailyLose property');
+      await this.userService.updateDailyLose(
+        data.player_id,
+        user.dailyLose + betAmount,
+      );
     }
 
     return {
-      balance: (user.balance - betAmount).toFixed(2),
+      balance: newBalance.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
 
   async handleWin(data: WinCallbackDto) {
+    // Проверка дубликата
+    if (await this.isTransactionProcessed(data.transaction_id)) {
+      throw new HttpException(
+        {
+          error_code: 'DUPLICATE_TRANSACTION',
+          error_description: 'Transaction already processed',
+        },
+        HttpStatus.OK,
+      );
+    }
+
     const user = await this.userService.getCurrentUser(data.player_id);
     const winAmount = Number(data.amount);
 
-    if ('dailyLose' in user) {
-      let newDailyLose = user.dailyLose - winAmount;
-      if (newDailyLose < 0) newDailyLose = 0;
-
-      await this.userService.updateDailyLose(data.player_id, newDailyLose);
-    } else {
-      throw new Error('User does not have a dailyLose property');
+    // Проверка на нулевой/отрицательный выигрыш
+    if (winAmount <= 0) {
+      return {
+        balance: user.balance.toFixed(2),
+        transaction_id: data.transaction_id,
+      };
     }
 
-    await this.userService.updateBalance(
-      data.player_id,
-      user.balance + winAmount,
-    );
+    // Обновляем баланс и сохраняем транзакцию
+    const newBalance = user.balance + winAmount;
+    await this.userService.updateBalance(data.player_id, newBalance);
+    await this.userService.saveTransaction({
+      player_id: data.player_id,
+      transaction_id: data.transaction_id,
+      action: 'win',
+      amount: winAmount,
+      round_id: data.round_id,
+      game_uuid: data.game_uuid,
+    });
+
+    // Обновляем dailyLose (если нужно)
+    if ('dailyLose' in user) {
+      const newDailyLose = Math.max(user.dailyLose - winAmount, 0);
+      await this.userService.updateDailyLose(data.player_id, newDailyLose);
+    }
 
     return {
-      balance: (user.balance + winAmount).toFixed(2),
+      balance: newBalance.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
 
   async handleRefund(data: RefundCallbackDto) {
-    // Логика обработки возврата
+    // Проверка дубликата
+    if (await this.isTransactionProcessed(data.transaction_id)) {
+      throw new HttpException(
+        {
+          error_code: 'DUPLICATE_TRANSACTION',
+          error_description: 'Transaction already processed',
+        },
+        HttpStatus.OK,
+      );
+    }
+
+    // Проверяем, что refund делается для существующей ставки (bet)
+    const originalBet = await this.userService.findTransaction(
+      data.bet_transaction_id,
+    );
+    if (!originalBet || originalBet.action !== 'bet') {
+      throw new HttpException(
+        {
+          error_code: 'INVALID_REFUND',
+          error_description: 'Refund only allowed for bets',
+        },
+        HttpStatus.OK,
+      );
+    }
 
     const user = await this.userService.getCurrentUser(data.player_id);
+    const refundAmount = Number(data.amount);
 
-    const { balance } = await this.userService.updateBalance(
-      data.player_id,
-      user.balance + Number(data.amount),
-    );
+    // Возвращаем деньги и сохраняем транзакцию
+    const newBalance = user.balance + refundAmount;
+    await this.userService.updateBalance(data.player_id, newBalance);
+    await this.userService.saveTransaction({
+      player_id: data.player_id,
+      transaction_id: data.transaction_id,
+      action: 'refund',
+      amount: refundAmount,
+      round_id: data.round_id,
+      game_uuid: data.game_uuid,
+      bet_transaction_id: data.bet_transaction_id,
+    });
+
     return {
-      balance: balance.toFixed(2),
+      balance: newBalance.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
 
   async handleRollback(data: RollbackCallbackDto) {
-    // Логика обработки отката
-
     const user = await this.userService.getCurrentUser(data.player_id);
+    let currentBalance = user.balance;
+
+    // Находим все транзакции для отката (в рамках round_id)
+    const transactions = await this.userService.getTransactionsForRollback(
+      data.player_id,
+      data.round_id,
+    );
+
+    // Откатываем каждую транзакцию
+    for (const tx of transactions) {
+      if (tx.action === 'bet') {
+        currentBalance += tx.amount; // Возвращаем ставку
+      } else if (tx.action === 'win') {
+        currentBalance -= tx.amount; // Отменяем выигрыш
+      }
+      await this.userService.markTransactionAsRolledBack(tx.transaction_id);
+    }
+
+    // Сохраняем новый баланс и транзакцию rollback
+    await this.userService.updateBalance(data.player_id, currentBalance);
+    await this.userService.saveTransaction({
+      player_id: data.player_id,
+      transaction_id: data.transaction_id,
+      action: 'rollback',
+      amount: 0,
+      round_id: data.round_id,
+      game_uuid: data.game_uuid,
+    });
 
     return {
-      balance: user.balance.toFixed(2),
+      balance: currentBalance.toFixed(2),
       transaction_id: data.transaction_id,
-      rollback_transactions: data.rollback_transactions.map((transaction) => ({
-        action: transaction.action,
-        amount: transaction.amount,
-        transaction_id: transaction.transaction_id,
-      })),
     };
   }
 }

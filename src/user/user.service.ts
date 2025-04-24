@@ -105,4 +105,39 @@ export class UserService {
       bannedUsers,
     };
   }
+
+  async findTransaction(transactionId: string) {
+    return this.prisma.transaction.findUnique({
+      where: { transaction_id: transactionId },
+    });
+  }
+
+  async saveTransaction(data: {
+    player_id: string;
+    transaction_id: string;
+    action: string;
+    amount: number;
+    round_id?: string;
+    game_uuid?: string;
+    bet_transaction_id?: string;
+  }) {
+    return this.prisma.transaction.create({ data });
+  }
+
+  async markTransactionAsRolledBack(transactionId: string) {
+    return this.prisma.transaction.update({
+      where: { transaction_id: transactionId },
+      data: { rolled_back: true },
+    });
+  }
+
+  async getTransactionsForRollback(playerId: string, roundId: string) {
+    return this.prisma.transaction.findMany({
+      where: {
+        player_id: playerId,
+        round_id: roundId,
+        rolled_back: false,
+      },
+    });
+  }
 }
