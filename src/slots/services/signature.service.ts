@@ -42,24 +42,20 @@ export class SignatureService {
     headers: Record<string, string>,
     receivedSign: string,
   ): boolean {
-    // 1. Фильтруем и нормализуем заголовки
     const signatureHeaders = {
       'X-Merchant-Id': headers['x-merchant-id']?.toString() || '',
       'X-Timestamp': headers['x-timestamp']?.toString() || '',
       'X-Nonce': headers['x-nonce']?.toString() || '',
     };
 
-    // 2. Объединяем параметры с учетом регистра ключей
     const mergedParams = {
       ...this.normalizeKeys(body),
       ...this.normalizeKeys(signatureHeaders),
     };
 
-    // 3. Сортируем и создаем query string
     const sortedParams = this.sortParams(mergedParams);
     const queryString = this.buildQueryString(sortedParams);
 
-    // 4. Вычисляем подпись
     const expectedSign = crypto
       .createHmac('sha1', this.merchantKey)
       .update(queryString)

@@ -12,8 +12,8 @@ import {
 } from '@nestjs/common';
 import { SlotegratorService } from './services/slotegrator.service';
 import { InitDemoGameDto, InitGameDto } from './dto/init.demo.game.dto';
-import * as path from 'path';
-import * as fs from 'fs';
+// import * as path from 'path';
+// import * as fs from 'fs';
 import { CallbackService } from './services/callback.service';
 import { SignatureService } from './services/signature.service';
 import {
@@ -35,7 +35,6 @@ export class SlotsController {
   private readonly logger = new Logger(SlotsController.name);
 
   private validateSignature(headers: Record<string, string>, body: any) {
-    // 1. Проверяем обязательные заголовки
     const requiredHeaders = [
       'x-merchant-id',
       'x-timestamp',
@@ -54,7 +53,6 @@ export class SlotsController {
       );
     }
 
-    // 2. Проверяем таймстамп
     const timestamp = parseInt(headers['x-timestamp']);
     const now = Math.floor(Date.now() / 1000);
 
@@ -68,7 +66,6 @@ export class SlotsController {
       );
     }
 
-    // 3. Валидируем подпись
     const isValid = this.signatureService.validateSignature(
       body,
       headers,
@@ -84,40 +81,6 @@ export class SlotsController {
         HttpStatus.OK,
       );
     }
-  }
-
-  @HttpCode(200)
-  @Post('webhook')
-  async handleWebhook(
-    @Body() body: any,
-    @Headers() headers: Record<string, string>,
-  ) {
-    try {
-      // Логирование запроса
-      this.logRequest(body, headers);
-
-      // Проверка подписи ДО обработки
-      this.validateSignature(headers, body);
-
-      // Обработка действий
-      return this.routeRequest(body.action, body);
-    } catch (error) {
-      this.logger.error('Webhook processing failed', error.stack);
-      throw error;
-    }
-  }
-
-  private logRequest(body: any, headers: Record<string, string>) {
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      headers: this.redactSensitiveHeaders(headers),
-      body,
-    };
-
-    fs.writeFileSync(
-      path.join('logs', `webhook-${Date.now()}.json`),
-      JSON.stringify(logEntry, null, 2),
-    );
   }
 
   private redactSensitiveHeaders(headers: Record<string, string>) {
@@ -150,6 +113,37 @@ export class SlotsController {
         );
     }
   }
+
+  @HttpCode(200)
+  @Post('webhook')
+  async handleWebhook(
+    @Body() body: any,
+    @Headers() headers: Record<string, string>,
+  ) {
+    try {
+      // this.logRequest(body, headers);
+
+      this.validateSignature(headers, body);
+
+      return this.routeRequest(body.action, body);
+    } catch (error) {
+      this.logger.error('Webhook processing failed', error.stack);
+      throw error;
+    }
+  }
+
+  // private logRequest(body: any, headers: Record<string, string>) {
+  //   const logEntry = {
+  //     timestamp: new Date().toISOString(),
+  //     headers: this.redactSensitiveHeaders(headers),
+  //     body,
+  //   };
+
+  //   fs.writeFileSync(
+  //     path.join('logs', `webhook-${Date.now()}.json`),
+  //     JSON.stringify(logEntry, null, 2),
+  //   );
+  // }
 
   @Get('games')
   async getGames(@Query() query: any): Promise<any> {
