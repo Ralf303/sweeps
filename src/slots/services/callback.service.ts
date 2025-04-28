@@ -12,6 +12,17 @@ import { UserService } from 'src/user/user.service';
 export class CallbackService {
   constructor(private userService: UserService) {}
 
+  private async validateRequest(data: { player_id: string }) {
+    try {
+      return await this.userService.getCurrentUser(data.player_id);
+    } catch (e: any) {
+      throw new HttpException(
+        `User not found with id ${e}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+  }
+
   private async isTransactionProcessed(
     transactionId: string,
   ): Promise<boolean> {
@@ -20,12 +31,13 @@ export class CallbackService {
   }
 
   async handleBalance(data: BalanceCallbackDto) {
-    const user = await this.userService.getCurrentUser(data.player_id);
+    const user = await this.validateRequest(data);
     return { balance: user.balance.toFixed(2) };
   }
 
   async handleBet(data: BetCallbackDto) {
-    // Проверка дубликата
+    const user = await this.validateRequest(data);
+
     if (await this.isTransactionProcessed(data.transaction_id)) {
       throw new HttpException(
         {
@@ -36,18 +48,17 @@ export class CallbackService {
       );
     }
 
-    const user = await this.userService.getCurrentUser(data.player_id);
     const betAmount = Number(data.amount);
-
-    // Проверка на нулевую/отрицательную ставку
     if (betAmount <= 0) {
-      return {
-        balance: user.balance.toFixed(2),
-        transaction_id: data.transaction_id,
-      };
+      throw new HttpException(
+        {
+          error_code: 'INVALID_AMOUNT',
+          error_description: 'Bet amount must be positive',
+        },
+        HttpStatus.OK,
+      );
     }
 
-    // Проверка достаточности баланса
     if (user.balance < betAmount) {
       throw new HttpException(
         {
@@ -58,25 +69,24 @@ export class CallbackService {
       );
     }
 
-    // Обновляем баланс и сохраняем транзакцию
-    const newBalance = user.balance - betAmount;
+    const newBalance = Number((user.balance - betAmount).toFixed(2));
+
     await this.userService.updateBalance(data.player_id, newBalance);
+    await this.userService.updateDailyLose(
+      data.player_id,
+      user.dailyLose + betAmount,
+    );
+
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'bet',
       amount: betAmount,
+      currency: data.currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
+      session_id: data.session_id,
     });
-
-    // Обновляем dailyLose (если нужно)
-    if ('dailyLose' in user) {
-      await this.userService.updateDailyLose(
-        data.player_id,
-        user.dailyLose + betAmount,
-      );
-    }
 
     return {
       balance: newBalance.toFixed(2),
@@ -85,7 +95,8 @@ export class CallbackService {
   }
 
   async handleWin(data: WinCallbackDto) {
-    // Проверка дубликата
+    const user = await this.validateRequest(data);
+
     if (await this.isTransactionProcessed(data.transaction_id)) {
       throw new HttpException(
         {
@@ -96,34 +107,32 @@ export class CallbackService {
       );
     }
 
-    const user = await this.userService.getCurrentUser(data.player_id);
     const winAmount = Number(data.amount);
-
-    // Проверка на нулевой/отрицательный выигрыш
     if (winAmount <= 0) {
-      return {
-        balance: user.balance.toFixed(2),
-        transaction_id: data.transaction_id,
-      };
+      throw new HttpException(
+        {
+          error_code: 'INVALID_AMOUNT',
+          error_description: 'Win amount must be positive',
+        },
+        HttpStatus.OK,
+      );
     }
 
-    // Обновляем баланс и сохраняем транзакцию
-    const newBalance = user.balance + winAmount;
+    const newBalance = Number((user.balance + winAmount).toFixed(2));
+    const newDailyLose = Math.max(0, user.dailyLose - winAmount);
+
     await this.userService.updateBalance(data.player_id, newBalance);
+    await this.userService.updateDailyLose(data.player_id, newDailyLose);
+
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'win',
       amount: winAmount,
+      currency: data.currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
     });
-
-    // Обновляем dailyLose (если нужно)
-    if ('dailyLose' in user) {
-      const newDailyLose = Math.max(user.dailyLose - winAmount, 0);
-      await this.userService.updateDailyLose(data.player_id, newDailyLose);
-    }
 
     return {
       balance: newBalance.toFixed(2),
@@ -132,7 +141,8 @@ export class CallbackService {
   }
 
   async handleRefund(data: RefundCallbackDto) {
-    // Проверка дубликата
+    const user = await this.validateRequest(data);
+
     if (await this.isTransactionProcessed(data.transaction_id)) {
       throw new HttpException(
         {
@@ -143,10 +153,10 @@ export class CallbackService {
       );
     }
 
-    // Проверяем, что refund делается для существующей ставки (bet)
     const originalBet = await this.userService.findTransaction(
       data.bet_transaction_id,
     );
+
     if (!originalBet || originalBet.action !== 'bet') {
       throw new HttpException(
         {
@@ -157,17 +167,31 @@ export class CallbackService {
       );
     }
 
-    const user = await this.userService.getCurrentUser(data.player_id);
-    const refundAmount = Number(data.amount);
+    const refundAmount = Math.min(Number(data.amount), originalBet.amount);
+    if (refundAmount <= 0) {
+      throw new HttpException(
+        {
+          error_code: 'INVALID_AMOUNT',
+          error_description: 'Invalid refund amount',
+        },
+        HttpStatus.OK,
+      );
+    }
 
-    // Возвращаем деньги и сохраняем транзакцию
-    const newBalance = user.balance + refundAmount;
+    const newBalance = Number((user.balance + refundAmount).toFixed(2));
+    const newDailyLose = Math.max(0, user.dailyLose - refundAmount);
+
     await this.userService.updateBalance(data.player_id, newBalance);
+    await this.userService.updateDailyLose(data.player_id, newDailyLose);
+
+    await this.userService.markTransactionAsRefunded(data.bet_transaction_id);
+
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'refund',
       amount: refundAmount,
+      currency: data.currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
       bet_transaction_id: data.bet_transaction_id,
@@ -180,38 +204,62 @@ export class CallbackService {
   }
 
   async handleRollback(data: RollbackCallbackDto) {
-    const user = await this.userService.getCurrentUser(data.player_id);
-    let currentBalance = user.balance;
+    const user = await this.validateRequest(data);
 
-    // Находим все транзакции для отката (в рамках round_id)
     const transactions = await this.userService.getTransactionsForRollback(
       data.player_id,
       data.round_id,
     );
 
-    // Откатываем каждую транзакцию
+    if (transactions.length === 0) {
+      throw new HttpException(
+        {
+          error_code: 'NO_TRANSACTIONS',
+          error_description: 'Nothing to rollback',
+        },
+        HttpStatus.OK,
+      );
+    }
+
+    let balanceChange = 0;
+    const currency = transactions[0].currency;
+
     for (const tx of transactions) {
-      if (tx.action === 'bet') {
-        currentBalance += tx.amount; // Возвращаем ставку
-      } else if (tx.action === 'win') {
-        currentBalance -= tx.amount; // Отменяем выигрыш
+      if (tx.currency !== currency) {
+        throw new HttpException(
+          {
+            error_code: 'MULTI_CURRENCY_ROLLBACK',
+            error_description: 'Cannot rollback multiple currencies',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
       }
+
+      balanceChange += tx.action === 'bet' ? tx.amount : -tx.amount;
+    }
+
+    const newBalance = Number((user.balance + balanceChange).toFixed(2));
+    const newDailyLose = Math.max(0, user.dailyLose - balanceChange);
+
+    await this.userService.updateBalance(data.player_id, newBalance);
+    await this.userService.updateDailyLose(data.player_id, newDailyLose);
+
+    for (const tx of transactions) {
       await this.userService.markTransactionAsRolledBack(tx.transaction_id);
     }
 
-    // Сохраняем новый баланс и транзакцию rollback
-    await this.userService.updateBalance(data.player_id, currentBalance);
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'rollback',
-      amount: 0,
+      amount: balanceChange,
+      currency: currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
     });
 
     return {
-      balance: currentBalance.toFixed(2),
+      balance: newBalance.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }

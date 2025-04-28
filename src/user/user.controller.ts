@@ -60,7 +60,7 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'User data' })
   @Get(':id')
   getUser(@Param('id') id: string) {
-    return this.userService.getUserById(id);
+    return this.userService.getCurrentUser(id);
   }
 
   @ApiOperation({ summary: 'Ban user' })
