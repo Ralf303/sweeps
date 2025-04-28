@@ -9,7 +9,7 @@ export class CryptoService {
   constructor(private prisma: PrismaService) {}
 
   private apiUrl = 'https://app.alphapo.net/api/v2/invoices/create';
-  private apiKey = 'd4dME4a8ulExDtTV0ttc5laojIqimwvV';
+  private apiKey = process.env.ALPHAPO_API_KEY;
 
   private generateSignature(body: object): string {
     const jsonBody = JSON.stringify(body);
