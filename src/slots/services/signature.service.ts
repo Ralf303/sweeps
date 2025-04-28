@@ -42,24 +42,51 @@ export class SignatureService {
     headers: Record<string, string>,
     receivedSign: string,
   ): boolean {
+    // Логирование входящих данных
+    console.log('[DEBUG] Received headers:', headers);
+    console.log('[DEBUG] Received body:', body);
+    console.log('[DEBUG] Received signature:', receivedSign);
+
+    // 1. Фильтрация заголовков
     const signatureHeaders = {
-      'X-Merchant-Id': headers['x-merchant-id']?.toString() || '',
-      'X-Timestamp': headers['x-timestamp']?.toString() || '',
-      'X-Nonce': headers['x-nonce']?.toString() || '',
+      'x-merchant-id': headers['x-merchant-id']?.toString(),
+      'x-timestamp': headers['x-timestamp']?.toString(),
+      'x-nonce': headers['x-nonce']?.toString(),
     };
 
+    // Проверка наличия обязательных заголовков
+    if (
+      !signatureHeaders['x-merchant-id'] ||
+      !signatureHeaders['x-timestamp'] ||
+      !signatureHeaders['x-nonce']
+    ) {
+      console.error('[ERROR] Missing required headers');
+      return false;
+    }
+
+    // 2. Объединение параметров
     const mergedParams = {
-      ...this.normalizeKeys(body),
-      ...this.normalizeKeys(signatureHeaders),
+      ...body,
+      ...signatureHeaders,
     };
+    console.log('[DEBUG] Merged params:', mergedParams);
 
+    // 3. Сортировка параметров
     const sortedParams = this.sortParams(mergedParams);
-    const queryString = this.buildQueryString(sortedParams);
+    console.log('[DEBUG] Sorted params:', sortedParams);
 
+    // 4. Создание query string
+    const queryString = this.buildQueryString(sortedParams);
+    console.log('[DEBUG] Query string:', queryString);
+
+    // 5. Генерация подписи
     const expectedSign = crypto
       .createHmac('sha1', this.merchantKey)
       .update(queryString)
       .digest('hex');
+
+    console.log('[DEBUG] Expected signature:', expectedSign);
+    console.log('[DEBUG] Signature match:', expectedSign === receivedSign);
 
     return expectedSign === receivedSign;
   }

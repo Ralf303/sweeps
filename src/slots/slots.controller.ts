@@ -53,18 +53,18 @@ export class SlotsController {
       );
     }
 
-    const timestamp = parseInt(headers['x-timestamp']);
-    const now = Math.floor(Date.now() / 1000);
+    // const timestamp = parseInt(headers['x-timestamp']);
+    // const now = Math.floor(Date.now() / 1000);
 
-    if (Math.abs(now - timestamp) > 30) {
-      throw new HttpException(
-        {
-          error_code: 'EXPIRED_REQUEST',
-          error_description: 'Request timestamp expired',
-        },
-        HttpStatus.OK,
-      );
-    }
+    // if (Math.abs(now - timestamp) > 30) {
+    //   throw new HttpException(
+    //     {
+    //       error_code: 'EXPIRED_REQUEST',
+    //       error_description: 'Request timestamp expired',
+    //     },
+    //     HttpStatus.OK,
+    //   );
+    // }
 
     const isValid = this.signatureService.validateSignature(
       body,
