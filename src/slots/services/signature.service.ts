@@ -42,14 +42,12 @@ export class SignatureService {
     headers: Record<string, string>,
     receivedSign: string,
   ): boolean {
-    // 1. Нормализация заголовков (приводим к lowercase)
     const normalizedHeaders = {
       'x-merchant-id': headers['x-merchant-id'] || headers['X-Merchant-Id'],
       'x-timestamp': headers['x-timestamp'] || headers['X-Timestamp'],
       'x-nonce': headers['x-nonce'] || headers['X-Nonce'],
     };
 
-    // 2. Проверка наличия всех заголовков
     if (
       !normalizedHeaders['x-merchant-id'] ||
       !normalizedHeaders['x-timestamp'] ||
@@ -58,21 +56,17 @@ export class SignatureService {
       return false;
     }
 
-    // 3. Подготовка данных для подписи
+    // Используем ключи заголовков в том регистре, как указано в документации (X-...)
     const signingData = {
       ...body,
-      'x-merchant-id': normalizedHeaders['x-merchant-id'],
-      'x-timestamp': normalizedHeaders['x-timestamp'],
-      'x-nonce': normalizedHeaders['x-nonce'],
+      'X-Merchant-Id': normalizedHeaders['x-merchant-id'],
+      'X-Timestamp': normalizedHeaders['x-timestamp'],
+      'X-Nonce': normalizedHeaders['x-nonce'],
     };
 
-    // 4. Сортировка параметров
     const sortedParams = this.sortParams(signingData);
-
-    // 5. Генерация query string
     const queryString = this.buildQueryString(sortedParams);
 
-    // 6. Вычисление подписи
     const expectedSign = crypto
       .createHmac('sha1', this.merchantKey)
       .update(queryString)
@@ -84,7 +78,6 @@ export class SignatureService {
   private buildQueryString(params: Record<string, any>): string {
     return Object.entries(params)
       .map(([key, value]) => {
-        // Особое внимание к типам данных:
         const stringValue =
           typeof value === 'object' ? JSON.stringify(value) : String(value);
         return `${encodeURIComponent(key)}=${encodeURIComponent(stringValue)}`;

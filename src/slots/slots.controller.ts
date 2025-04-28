@@ -34,42 +34,6 @@ export class SlotsController {
   ) {}
   private readonly logger = new Logger(SlotsController.name);
 
-  private validateSignature(headers: Record<string, string>, body: any) {
-    const requiredHeaders = [
-      'x-merchant-id',
-      'x-timestamp',
-      'x-nonce',
-      'x-sign',
-    ];
-    const missingHeaders = requiredHeaders.filter((h) => !headers[h]);
-
-    if (missingHeaders.length > 0) {
-      throw new HttpException(
-        {
-          error_code: 'MISSING_HEADERS',
-          error_description: `Missing headers: ${missingHeaders.join(', ')}`,
-        },
-        HttpStatus.OK,
-      );
-    }
-
-    const isValid = this.signatureService.validateSignature(
-      body,
-      headers,
-      headers['x-sign'],
-    );
-
-    if (!isValid) {
-      throw new HttpException(
-        {
-          error_code: 'INVALID_SIGNATURE',
-          error_description: 'Signature validation failed',
-        },
-        HttpStatus.OK,
-      );
-    }
-  }
-
   private routeRequest(action: string, data: any) {
     switch (action.toLowerCase()) {
       case 'balance':
@@ -100,7 +64,6 @@ export class SlotsController {
     @Headers() headers: Record<string, string>,
   ) {
     try {
-      // 1. Валидация заголовков
       const requiredHeaders = [
         'x-merchant-id',
         'x-timestamp',
@@ -121,7 +84,6 @@ export class SlotsController {
         );
       }
 
-      // 2. Проверка подписи
       const isValid = this.signatureService.validateSignature(
         body,
         headers,
@@ -138,22 +100,6 @@ export class SlotsController {
         );
       }
 
-      // // 3. Проверка таймстампа (±30 секунд)
-      // const timestamp = parseInt(
-      //   headers['x-timestamp'] || headers['X-Timestamp'],
-      // );
-      // const now = Math.floor(Date.now() / 1000);
-      // if (Math.abs(now - timestamp) > 30) {
-      //   throw new HttpException(
-      //     {
-      //       error_code: 'EXPIRED_REQUEST',
-      //       error_description: 'Request timestamp expired',
-      //     },
-      //     HttpStatus.OK,
-      //   );
-      // }
-
-      // 4. Обработка запроса
       return this.routeRequest(body.action, body);
     } catch (error) {
       this.logger.error('Webhook processing failed', {
@@ -165,19 +111,6 @@ export class SlotsController {
       throw error;
     }
   }
-
-  // private logRequest(body: any, headers: Record<string, string>) {
-  //   const logEntry = {
-  //     timestamp: new Date().toISOString(),
-  //     headers: this.redactSensitiveHeaders(headers),
-  //     body,
-  //   };
-
-  //   fs.writeFileSync(
-  //     path.join('logs', `webhook-${Date.now()}.json`),
-  //     JSON.stringify(logEntry, null, 2),
-  //   );
-  // }
 
   @Get('games')
   async getGames(@Query() query: any): Promise<any> {
