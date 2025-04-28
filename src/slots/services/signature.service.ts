@@ -42,77 +42,62 @@ export class SignatureService {
     headers: Record<string, string>,
     receivedSign: string,
   ): boolean {
-    // Логирование входящих данных
-    console.log('[DEBUG] Received headers:', headers);
-    console.log('[DEBUG] Received body:', body);
-    console.log('[DEBUG] Received signature:', receivedSign);
-
-    // 1. Фильтрация заголовков
-    const signatureHeaders = {
-      'x-merchant-id': headers['x-merchant-id']?.toString(),
-      'x-timestamp': headers['x-timestamp']?.toString(),
-      'x-nonce': headers['x-nonce']?.toString(),
+    // 1. Нормализация заголовков (приводим к lowercase)
+    const normalizedHeaders = {
+      'x-merchant-id': headers['x-merchant-id'] || headers['X-Merchant-Id'],
+      'x-timestamp': headers['x-timestamp'] || headers['X-Timestamp'],
+      'x-nonce': headers['x-nonce'] || headers['X-Nonce'],
     };
 
-    // Проверка наличия обязательных заголовков
+    // 2. Проверка наличия всех заголовков
     if (
-      !signatureHeaders['x-merchant-id'] ||
-      !signatureHeaders['x-timestamp'] ||
-      !signatureHeaders['x-nonce']
+      !normalizedHeaders['x-merchant-id'] ||
+      !normalizedHeaders['x-timestamp'] ||
+      !normalizedHeaders['x-nonce']
     ) {
-      console.error('[ERROR] Missing required headers');
       return false;
     }
 
-    // 2. Объединение параметров
-    const mergedParams = {
+    // 3. Подготовка данных для подписи
+    const signingData = {
       ...body,
-      ...signatureHeaders,
+      'x-merchant-id': normalizedHeaders['x-merchant-id'],
+      'x-timestamp': normalizedHeaders['x-timestamp'],
+      'x-nonce': normalizedHeaders['x-nonce'],
     };
-    console.log('[DEBUG] Merged params:', mergedParams);
 
-    // 3. Сортировка параметров
-    const sortedParams = this.sortParams(mergedParams);
-    console.log('[DEBUG] Sorted params:', sortedParams);
+    // 4. Сортировка параметров
+    const sortedParams = this.sortParams(signingData);
 
-    // 4. Создание query string
+    // 5. Генерация query string
     const queryString = this.buildQueryString(sortedParams);
-    console.log('[DEBUG] Query string:', queryString);
 
-    // 5. Генерация подписи
+    // 6. Вычисление подписи
     const expectedSign = crypto
       .createHmac('sha1', this.merchantKey)
       .update(queryString)
       .digest('hex');
 
-    console.log('[DEBUG] Expected signature:', expectedSign);
-    console.log('[DEBUG] Signature match:', expectedSign === receivedSign);
-
-    return expectedSign === receivedSign;
-  }
-
-  private normalizeKeys(obj: Record<string, any>): Record<string, any> {
-    return Object.keys(obj).reduce((acc, key) => {
-      acc[key.toLowerCase()] = obj[key];
-      return acc;
-    }, {});
-  }
-
-  private sortParams(params: Record<string, any>): Record<string, any> {
-    return Object.keys(params)
-      .sort()
-      .reduce((sorted, key) => {
-        sorted[key] = params[key];
-        return sorted;
-      }, {});
+    return expectedSign.toLowerCase() === receivedSign.toLowerCase();
   }
 
   private buildQueryString(params: Record<string, any>): string {
     return Object.entries(params)
       .map(([key, value]) => {
-        const encodedValue = encodeURIComponent(value.toString());
-        return `${key}=${encodedValue}`;
+        // Особое внимание к типам данных:
+        const stringValue =
+          typeof value === 'object' ? JSON.stringify(value) : String(value);
+        return `${encodeURIComponent(key)}=${encodeURIComponent(stringValue)}`;
       })
       .join('&');
+  }
+
+  private sortParams(params: Record<string, any>): Record<string, any> {
+    return Object.keys(params)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = params[key];
+        return acc;
+      }, {});
   }
 }

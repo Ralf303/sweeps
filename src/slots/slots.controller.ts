@@ -53,19 +53,6 @@ export class SlotsController {
       );
     }
 
-    // const timestamp = parseInt(headers['x-timestamp']);
-    // const now = Math.floor(Date.now() / 1000);
-
-    // if (Math.abs(now - timestamp) > 30) {
-    //   throw new HttpException(
-    //     {
-    //       error_code: 'EXPIRED_REQUEST',
-    //       error_description: 'Request timestamp expired',
-    //     },
-    //     HttpStatus.OK,
-    //   );
-    // }
-
     const isValid = this.signatureService.validateSignature(
       body,
       headers,
@@ -81,14 +68,6 @@ export class SlotsController {
         HttpStatus.OK,
       );
     }
-  }
-
-  private redactSensitiveHeaders(headers: Record<string, string>) {
-    const sensitive = ['x-sign', 'authorization'];
-    return Object.keys(headers).reduce((acc, key) => {
-      acc[key] = sensitive.includes(key) ? '*****' : headers[key];
-      return acc;
-    }, {});
   }
 
   private routeRequest(action: string, data: any) {
@@ -121,13 +100,68 @@ export class SlotsController {
     @Headers() headers: Record<string, string>,
   ) {
     try {
-      // this.logRequest(body, headers);
+      // 1. Валидация заголовков
+      const requiredHeaders = [
+        'x-merchant-id',
+        'x-timestamp',
+        'x-nonce',
+        'x-sign',
+      ];
+      const missingHeaders = requiredHeaders.filter(
+        (h) => !headers[h.toLowerCase()] && !headers[h],
+      );
 
-      this.validateSignature(headers, body);
+      if (missingHeaders.length > 0) {
+        throw new HttpException(
+          {
+            error_code: 'MISSING_HEADERS',
+            error_description: `Missing headers: ${missingHeaders.join(', ')}`,
+          },
+          HttpStatus.OK,
+        );
+      }
 
+      // 2. Проверка подписи
+      const isValid = this.signatureService.validateSignature(
+        body,
+        headers,
+        headers['x-sign'] || headers['X-Sign'],
+      );
+
+      if (!isValid) {
+        throw new HttpException(
+          {
+            error_code: 'INVALID_SIGNATURE',
+            error_description: 'Signature validation failed',
+          },
+          HttpStatus.OK,
+        );
+      }
+
+      // // 3. Проверка таймстампа (±30 секунд)
+      // const timestamp = parseInt(
+      //   headers['x-timestamp'] || headers['X-Timestamp'],
+      // );
+      // const now = Math.floor(Date.now() / 1000);
+      // if (Math.abs(now - timestamp) > 30) {
+      //   throw new HttpException(
+      //     {
+      //       error_code: 'EXPIRED_REQUEST',
+      //       error_description: 'Request timestamp expired',
+      //     },
+      //     HttpStatus.OK,
+      //   );
+      // }
+
+      // 4. Обработка запроса
       return this.routeRequest(body.action, body);
     } catch (error) {
-      this.logger.error('Webhook processing failed', error.stack);
+      this.logger.error('Webhook processing failed', {
+        error: error.message,
+        stack: error.stack,
+        body,
+        headers,
+      });
       throw error;
     }
   }
