@@ -8,24 +8,29 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class CryptoService {
   constructor(private prisma: PrismaService) {}
 
-  private apiUrl = 'https://api.alphapo.net/invoices/create';
-  private apiKey = '<YOUR_PUBLIC_KEY>';
-  private apiSecret = '<YOUR_SECRET_KEY>';
+  private apiUrl = 'https://app.alphapo.net/api/v2/invoices/create';
+  private apiKey = 'd4dME4a8ulExDtTV0ttc5laojIqimwvV';
 
   private generateSignature(body: object): string {
     const jsonBody = JSON.stringify(body);
     return crypto
-      .createHmac('sha512', this.apiSecret)
+      .createHmac('sha512', this.apiKey)
       .update(jsonBody)
       .digest('hex');
   }
 
   async createInvoice(dto: CreateInvoiceDto) {
     const payload = {
-      foreign_id: dto.userId,
-      amount: dto.amount,
+      foreign_id: dto.foreign_id,
+      amount: dto.amount.toString(),
       currency: dto.currency,
+      title: dto.title,
       description: dto.description || 'Balance top-up',
+      url_success: dto.url_success,
+      url_failed: dto.url_failed,
+      ...(dto.sender_currency && { sender_currency: dto.sender_currency }),
+      ...(dto.email_user && { email_user: dto.email_user }),
+      ...(dto.timer !== undefined && { timer: dto.timer }),
     };
 
     const signature = this.generateSignature(payload);
