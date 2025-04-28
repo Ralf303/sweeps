@@ -106,6 +106,14 @@ export class UserService {
   async findTransaction(transactionId: string) {
     return this.prisma.transaction.findUnique({
       where: { transaction_id: transactionId },
+      select: {
+        action: true,
+        amount: true,
+        refunded_amount: true,
+        game_uuid: true,
+        currency: true,
+        rolled_back: true,
+      },
     });
   }
 
@@ -147,7 +155,46 @@ export class UserService {
         userId: playerId,
         round_id: roundId,
         rolled_back: false,
+        action: { in: ['bet', 'win'] },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+  }
+
+  async updateRefundedAmount(transactionId: string, amount: number) {
+    return this.prisma.transaction.update({
+      where: { transaction_id: transactionId },
+      data: {
+        refunded_amount: { increment: amount },
+        refunded: true,
       },
     });
+  }
+
+  async markTransactionsAsRolledBack(transactionIds: string[]) {
+    return this.prisma.transaction.updateMany({
+      where: {
+        transaction_id: { in: transactionIds },
+      },
+      data: {
+        rolled_back: true,
+        refunded_amount: 0,
+      },
+    });
+  }
+
+  async getCurrentGameBalance(playerId: string, gameUuid: string) {
+    const aggregations = await this.prisma.transaction.aggregate({
+      where: {
+        userId: playerId,
+        game_uuid: gameUuid,
+        rolled_back: false,
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return aggregations._sum.amount || 0;
   }
 }

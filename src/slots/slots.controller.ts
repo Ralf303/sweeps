@@ -35,21 +35,44 @@ export class SlotsController {
   private readonly logger = new Logger(SlotsController.name);
 
   private validateSignature(headers: Record<string, string>, body: any) {
-    const merchantId = headers['x-merchant-id'];
-    const timestamp = headers['x-timestamp'];
-    const nonce = headers['x-nonce'];
-    const sign = headers['x-sign'];
+    // 1. Проверяем обязательные заголовки
+    const requiredHeaders = [
+      'x-merchant-id',
+      'x-timestamp',
+      'x-nonce',
+      'x-sign',
+    ];
+    const missingHeaders = requiredHeaders.filter((h) => !headers[h]);
 
-    const authHeaders = {
-      'X-Merchant-Id': merchantId,
-      'X-Timestamp': timestamp,
-      'X-Nonce': nonce,
-    };
+    if (missingHeaders.length > 0) {
+      throw new HttpException(
+        {
+          error_code: 'MISSING_HEADERS',
+          error_description: `Missing headers: ${missingHeaders.join(', ')}`,
+        },
+        HttpStatus.OK,
+      );
+    }
 
+    // 2. Проверяем таймстамп
+    const timestamp = parseInt(headers['x-timestamp']);
+    const now = Math.floor(Date.now() / 1000);
+
+    if (Math.abs(now - timestamp) > 30) {
+      throw new HttpException(
+        {
+          error_code: 'EXPIRED_REQUEST',
+          error_description: 'Request timestamp expired',
+        },
+        HttpStatus.OK,
+      );
+    }
+
+    // 3. Валидируем подпись
     const isValid = this.signatureService.validateSignature(
       body,
-      authHeaders,
-      sign,
+      headers,
+      headers['x-sign'],
     );
 
     if (!isValid) {
@@ -70,48 +93,61 @@ export class SlotsController {
     @Headers() headers: Record<string, string>,
   ) {
     try {
-      const logsDir = path.join(process.cwd(), 'logs');
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir);
-      }
+      // Логирование запроса
+      this.logRequest(body, headers);
 
-      const now = new Date();
-      const fileName = `webhook-${now.toISOString().replace(/[:.]/g, '-')}.txt`;
-      const filePath = path.join(logsDir, fileName);
-
-      fs.writeFileSync(filePath, JSON.stringify(body, null, 2));
-
-      this.logger.log(`Webhook saved to ${filePath}`);
+      // Проверка подписи ДО обработки
       this.validateSignature(headers, body);
 
-      switch (body.action) {
-        case 'balance':
-          this.logger.log('Balance action');
-          return this.callbackService.handleBalance(body);
-        case 'bet':
-          this.logger.log('Bet action');
-          return this.callbackService.handleBet(body);
-        case 'win':
-          this.logger.log('Win action');
-          return this.callbackService.handleWin(body);
-        case 'refund':
-          this.logger.log('Refund action');
-          return this.callbackService.handleRefund(body);
-        case 'rollback':
-          this.logger.log('Rollback action');
-          return this.callbackService.handleRollback(body);
-        default:
-          throw new HttpException(
-            {
-              error_code: 'INVALID_ACTION',
-              error_description: 'Unknown action type',
-            },
-            HttpStatus.OK,
-          );
-      }
+      // Обработка действий
+      return this.routeRequest(body.action, body);
     } catch (error) {
-      this.logger.error('Error saving webhook', error);
+      this.logger.error('Webhook processing failed', error.stack);
       throw error;
+    }
+  }
+
+  private logRequest(body: any, headers: Record<string, string>) {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      headers: this.redactSensitiveHeaders(headers),
+      body,
+    };
+
+    fs.writeFileSync(
+      path.join('logs', `webhook-${Date.now()}.json`),
+      JSON.stringify(logEntry, null, 2),
+    );
+  }
+
+  private redactSensitiveHeaders(headers: Record<string, string>) {
+    const sensitive = ['x-sign', 'authorization'];
+    return Object.keys(headers).reduce((acc, key) => {
+      acc[key] = sensitive.includes(key) ? '*****' : headers[key];
+      return acc;
+    }, {});
+  }
+
+  private routeRequest(action: string, data: any) {
+    switch (action.toLowerCase()) {
+      case 'balance':
+        return this.callbackService.handleBalance(data);
+      case 'bet':
+        return this.callbackService.handleBet(data);
+      case 'win':
+        return this.callbackService.handleWin(data);
+      case 'refund':
+        return this.callbackService.handleRefund(data);
+      case 'rollback':
+        return this.callbackService.handleRollback(data);
+      default:
+        throw new HttpException(
+          {
+            error_code: 'INVALID_ACTION',
+            error_description: `Unknown action: ${action}`,
+          },
+          HttpStatus.OK,
+        );
     }
   }
 

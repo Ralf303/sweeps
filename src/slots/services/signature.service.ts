@@ -38,29 +38,58 @@ export class SignatureService {
   }
 
   validateSignature(
-    requestBody: Record<string, any>,
+    body: Record<string, any>,
     headers: Record<string, string>,
     receivedSign: string,
   ): boolean {
-    const mergedParams = { ...requestBody, ...headers };
-    const sortedParams = this.sortParams(mergedParams);
-    const hashString = new URLSearchParams(sortedParams).toString();
+    // 1. Фильтруем и нормализуем заголовки
+    const signatureHeaders = {
+      'X-Merchant-Id': headers['x-merchant-id']?.toString() || '',
+      'X-Timestamp': headers['x-timestamp']?.toString() || '',
+      'X-Nonce': headers['x-nonce']?.toString() || '',
+    };
 
+    // 2. Объединяем параметры с учетом регистра ключей
+    const mergedParams = {
+      ...this.normalizeKeys(body),
+      ...this.normalizeKeys(signatureHeaders),
+    };
+
+    // 3. Сортируем и создаем query string
+    const sortedParams = this.sortParams(mergedParams);
+    const queryString = this.buildQueryString(sortedParams);
+
+    // 4. Вычисляем подпись
     const expectedSign = crypto
       .createHmac('sha1', this.merchantKey)
-      .update(hashString)
+      .update(queryString)
       .digest('hex');
 
     return expectedSign === receivedSign;
   }
 
+  private normalizeKeys(obj: Record<string, any>): Record<string, any> {
+    return Object.keys(obj).reduce((acc, key) => {
+      acc[key.toLowerCase()] = obj[key];
+      return acc;
+    }, {});
+  }
+
   private sortParams(params: Record<string, any>): Record<string, any> {
-    const sorted: Record<string, any> = {};
-    Object.keys(params)
+    return Object.keys(params)
       .sort()
-      .forEach((key) => {
+      .reduce((sorted, key) => {
         sorted[key] = params[key];
-      });
-    return sorted;
+        return sorted;
+      }, {});
+  }
+
+  private buildQueryString(params: Record<string, any>): string {
+    return Object.entries(params)
+      .map(([key, value]) => {
+        const encodedValue = encodeURIComponent(value.toString());
+        return `${key}=${encodedValue}`;
+      })
+      .join('&');
   }
 }

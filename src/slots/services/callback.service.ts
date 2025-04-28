@@ -1,10 +1,11 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Decimal } from 'decimal.js';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import {
   BalanceCallbackDto,
   BetCallbackDto,
-  WinCallbackDto,
   RefundCallbackDto,
   RollbackCallbackDto,
+  WinCallbackDto,
 } from '../dto/callback.dto';
 import { UserService } from 'src/user/user.service';
 
@@ -13,14 +14,14 @@ export class CallbackService {
   constructor(private userService: UserService) {}
 
   private async validateRequest(data: { player_id: string }) {
-    try {
-      return await this.userService.getCurrentUser(data.player_id);
-    } catch (e: any) {
+    const user = await this.userService.getCurrentUser(data.player_id);
+    if (!user) {
       throw new HttpException(
-        `User not found with id ${e}`,
+        `User not found with id ${data.player_id}`,
         HttpStatus.NOT_FOUND,
       );
     }
+    return user;
   }
 
   private async isTransactionProcessed(
@@ -32,11 +33,21 @@ export class CallbackService {
 
   async handleBalance(data: BalanceCallbackDto) {
     const user = await this.validateRequest(data);
-    return { balance: user.balance.toFixed(2) };
+    return { balance: new Decimal(user.balance).toFixed(2) };
   }
 
   async handleBet(data: BetCallbackDto) {
     const user = await this.validateRequest(data);
+
+    if (!data.game_uuid || !data.round_id) {
+      throw new HttpException(
+        {
+          error_code: 'MISSING_PARAMETERS',
+          error_description: 'game_uuid and round_id are required',
+        },
+        HttpStatus.OK,
+      );
+    }
 
     if (await this.isTransactionProcessed(data.transaction_id)) {
       throw new HttpException(
@@ -48,8 +59,8 @@ export class CallbackService {
       );
     }
 
-    const betAmount = Number(data.amount);
-    if (betAmount <= 0) {
+    const betAmount = new Decimal(data.amount);
+    if (betAmount.lessThanOrEqualTo(0)) {
       throw new HttpException(
         {
           error_code: 'INVALID_AMOUNT',
@@ -59,7 +70,8 @@ export class CallbackService {
       );
     }
 
-    if (user.balance < betAmount) {
+    const currentBalance = new Decimal(user.balance);
+    if (currentBalance.lessThan(betAmount)) {
       throw new HttpException(
         {
           error_code: 'INSUFFICIENT_FUNDS',
@@ -69,19 +81,19 @@ export class CallbackService {
       );
     }
 
-    const newBalance = Number((user.balance - betAmount).toFixed(2));
+    const newBalance = currentBalance.minus(betAmount).toNumber();
 
     await this.userService.updateBalance(data.player_id, newBalance);
     await this.userService.updateDailyLose(
       data.player_id,
-      user.dailyLose + betAmount,
+      new Decimal(user.dailyLose).plus(betAmount).toNumber(),
     );
 
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'bet',
-      amount: betAmount,
+      amount: betAmount.toNumber(),
       currency: data.currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
@@ -89,13 +101,23 @@ export class CallbackService {
     });
 
     return {
-      balance: newBalance.toFixed(2),
+      balance: new Decimal(newBalance).toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
 
   async handleWin(data: WinCallbackDto) {
     const user = await this.validateRequest(data);
+
+    if (!data.game_uuid || !data.round_id) {
+      throw new HttpException(
+        {
+          error_code: 'MISSING_PARAMETERS',
+          error_description: 'game_uuid and round_id are required',
+        },
+        HttpStatus.OK,
+      );
+    }
 
     if (await this.isTransactionProcessed(data.transaction_id)) {
       throw new HttpException(
@@ -107,8 +129,8 @@ export class CallbackService {
       );
     }
 
-    const winAmount = Number(data.amount);
-    if (winAmount <= 0) {
+    const winAmount = new Decimal(data.amount);
+    if (winAmount.lessThanOrEqualTo(0)) {
       throw new HttpException(
         {
           error_code: 'INVALID_AMOUNT',
@@ -118,8 +140,11 @@ export class CallbackService {
       );
     }
 
-    const newBalance = Number((user.balance + winAmount).toFixed(2));
-    const newDailyLose = Math.max(0, user.dailyLose - winAmount);
+    const newBalance = new Decimal(user.balance).plus(winAmount).toNumber();
+    const newDailyLose = Decimal.max(
+      0,
+      new Decimal(user.dailyLose).minus(winAmount),
+    ).toNumber();
 
     await this.userService.updateBalance(data.player_id, newBalance);
     await this.userService.updateDailyLose(data.player_id, newDailyLose);
@@ -128,14 +153,14 @@ export class CallbackService {
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'win',
-      amount: winAmount,
+      amount: winAmount.toNumber(),
       currency: data.currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
     });
 
     return {
-      balance: newBalance.toFixed(2),
+      balance: new Decimal(newBalance).toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
@@ -167,7 +192,34 @@ export class CallbackService {
       );
     }
 
-    const refundAmount = Math.min(Number(data.amount), originalBet.amount);
+    if (originalBet.game_uuid !== data.game_uuid) {
+      throw new HttpException(
+        {
+          error_code: 'GAME_MISMATCH',
+          error_description: 'Refund game mismatch',
+        },
+        HttpStatus.OK,
+      );
+    }
+
+    if (originalBet.rolled_back) {
+      throw new HttpException(
+        {
+          error_code: 'ALREADY_ROLLED_BACK',
+          error_description: 'Original bet already rolled back',
+        },
+        HttpStatus.OK,
+      );
+    }
+
+    const maxRefundable = new Decimal(originalBet.amount).minus(
+      originalBet.refunded_amount,
+    );
+    const refundAmount = Decimal.min(
+      maxRefundable,
+      new Decimal(data.amount),
+    ).toNumber();
+
     if (refundAmount <= 0) {
       throw new HttpException(
         {
@@ -178,34 +230,33 @@ export class CallbackService {
       );
     }
 
-    const newBalance = Number((user.balance + refundAmount).toFixed(2));
-    const newDailyLose = Math.max(0, user.dailyLose - refundAmount);
+    const newBalance = new Decimal(user.balance).plus(refundAmount).toNumber();
 
     await this.userService.updateBalance(data.player_id, newBalance);
-    await this.userService.updateDailyLose(data.player_id, newDailyLose);
-
-    await this.userService.markTransactionAsRefunded(data.bet_transaction_id);
+    await this.userService.updateRefundedAmount(
+      data.bet_transaction_id,
+      refundAmount,
+    );
 
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'refund',
       amount: refundAmount,
-      currency: data.currency,
+      currency: originalBet.currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
       bet_transaction_id: data.bet_transaction_id,
     });
 
     return {
-      balance: newBalance.toFixed(2),
+      balance: new Decimal(newBalance).toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
 
   async handleRollback(data: RollbackCallbackDto) {
     const user = await this.validateRequest(data);
-
     const transactions = await this.userService.getTransactionsForRollback(
       data.player_id,
       data.round_id,
@@ -221,11 +272,12 @@ export class CallbackService {
       );
     }
 
-    let balanceChange = 0;
-    const currency = transactions[0].currency;
+    const baseCurrency = transactions[0].currency;
+    const baseGameUuid = transactions[0].game_uuid;
+    let balanceChange = new Decimal(0);
 
     for (const tx of transactions) {
-      if (tx.currency !== currency) {
+      if (tx.currency !== baseCurrency) {
         throw new HttpException(
           {
             error_code: 'MULTI_CURRENCY_ROLLBACK',
@@ -235,31 +287,51 @@ export class CallbackService {
         );
       }
 
-      balanceChange += tx.action === 'bet' ? tx.amount : -tx.amount;
+      if (tx.game_uuid !== baseGameUuid) {
+        throw new HttpException(
+          {
+            error_code: 'MULTI_GAME_ROLLBACK',
+            error_description: 'Cannot rollback multiple games',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (tx.rolled_back) {
+        throw new HttpException(
+          {
+            error_code: 'ALREADY_ROLLED_BACK',
+            error_description: `Transaction ${tx.transaction_id} already rolled back`,
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      balanceChange =
+        tx.action === 'bet'
+          ? balanceChange.plus(tx.amount)
+          : balanceChange.minus(tx.amount);
     }
 
-    const newBalance = Number((user.balance + balanceChange).toFixed(2));
-    const newDailyLose = Math.max(0, user.dailyLose - balanceChange);
+    const newBalance = new Decimal(user.balance).plus(balanceChange).toNumber();
 
     await this.userService.updateBalance(data.player_id, newBalance);
-    await this.userService.updateDailyLose(data.player_id, newDailyLose);
-
-    for (const tx of transactions) {
-      await this.userService.markTransactionAsRolledBack(tx.transaction_id);
-    }
+    await this.userService.markTransactionsAsRolledBack(
+      transactions.map((tx) => tx.transaction_id),
+    );
 
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'rollback',
-      amount: balanceChange,
-      currency: currency,
+      amount: balanceChange.toNumber(),
+      currency: baseCurrency,
       round_id: data.round_id,
-      game_uuid: data.game_uuid,
+      game_uuid: baseGameUuid,
     });
 
     return {
-      balance: newBalance.toFixed(2),
+      balance: new Decimal(newBalance).toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
