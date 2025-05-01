@@ -22,6 +22,10 @@ model User {
     isBanned        Boolean @default(false)
     referralCode    String  @unique @default("")
     current_session String?
+    ip              String?
+    country         String?
+    refPercentage   Float   @default(0)
+    regIp           String?
 
     referredBy   User?         @relation("UserReferrals", fields: [referredById], references: [id])
     referrals    User[]        @relation("UserReferrals")
@@ -30,6 +34,23 @@ model User {
     createdAt   DateTime      @default(now())
     updatedAt   DateTime      @updatedAt
     ChatMessage ChatMessage[]
+    Crypto      Crypto[]
+}
+
+model Crypto {
+    id     Int    @id
+    userId String
+
+    currency  String
+    amount    Decimal  @db.Decimal(18, 8)
+    status    String
+    createdAt DateTime @default(now())
+
+    senderAmount   Decimal? @db.Decimal(18, 8)
+    senderCurrency String?
+    rawData        Json?
+
+    user User @relation(fields: [userId], references: [id])
 }
 
 model Transaction {

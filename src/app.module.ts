@@ -10,6 +10,7 @@ import { ChatModule } from './chat/chat.module';
 import { ReferalModule } from './referal/referal.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CryptoModule } from './crypto/crypto.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { CryptoModule } from './crypto/crypto.module';
     ChatModule,
     ReferalModule,
     CryptoModule,
+    StatsModule,
   ],
 })
 export class AppModule {}

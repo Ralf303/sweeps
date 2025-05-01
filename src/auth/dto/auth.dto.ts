@@ -25,3 +25,15 @@ export class RegisterDto {
   })
   referralCode?: string;
 }
+
+export class ValidateDto {
+  id: string;
+  email: string;
+  nickname: string;
+  role: string;
+  balance: number;
+  referralsCount: number;
+  referralCode: string;
+  referralAllLose: number;
+  isBanned: boolean;
+}

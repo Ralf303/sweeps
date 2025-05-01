@@ -3,10 +3,15 @@ import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { RedisService } from 'src/redis/redis.service';
+import Decimal from 'decimal.js';
 
 @Injectable()
 export class CryptoService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private redis: RedisService,
+  ) {}
 
   private apiUrl =
     'https://app.sandbox.cryptoprocessing.com/api/v2/invoices/create';
@@ -14,10 +19,6 @@ export class CryptoService {
   private secretKey = process.env.ALPHAPO_SECRET_KEY;
 
   private generateSignature(body: object): string {
-    console.log('Generating signature for body:', body);
-    console.log('Using secret key:', this.secretKey);
-    console.log('Using API key:', this.apiKey);
-
     const jsonBody = JSON.stringify(body);
     return crypto
       .createHmac('sha512', this.secretKey)
@@ -49,6 +50,14 @@ export class CryptoService {
       },
     });
 
+    const invoiceData = {
+      userId: dto.foreign_id,
+      amount: dto.amount,
+      currency: dto.currency,
+    };
+
+    await this.redis.setInvoice(dto.foreign_id, invoiceData);
+
     return response.data;
   }
 
@@ -71,11 +80,38 @@ export class CryptoService {
   }
 
   async handleCallback(data: any) {
-    const amount = parseFloat(data.amount);
+    const foreignId = data?.crypto_address?.foreign_id;
+    const status = data?.status;
+
+    if (!foreignId || status !== 'confirmed') return;
+
+    const invoice = await this.redis.getInvoice(foreignId);
+    if (!invoice) return;
+
+    await this.prisma.crypto.create({
+      data: {
+        id: data.id,
+        user: foreignId,
+        amount: new Decimal(data.currency_received.amount),
+        currency: data.currency_received.currency,
+        status: 'confirmed',
+        senderAmount: data.currency_sent?.amount
+          ? new Decimal(data.currency_sent.amount)
+          : undefined,
+        senderCurrency: data.currency_sent?.currency || undefined,
+        rawData: data,
+      },
+    });
 
     await this.prisma.user.update({
-      where: { id: data.foreign_id },
-      data: { balance: { increment: amount } },
+      where: { id: foreignId },
+      data: {
+        balance: {
+          increment: Number(data.currency_received.amount),
+        },
+      },
     });
+
+    await this.redis.deleteInvoice(foreignId);
   }
 }

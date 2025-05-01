@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { UserResponseDto } from './dto/user.dto';
+import { USER_SELECT_FIELDS } from './utils/user.select';
 
 @Injectable()
 export class UserService {
@@ -17,11 +19,16 @@ export class UserService {
     });
   }
 
-  async getCurrentUser(userId: string) {
+  async getCurrentUser(userId: string): Promise<UserResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
+      select: USER_SELECT_FIELDS,
     });
-    if (!user) throw new NotFoundException('User not found');
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
     return user;
   }
 
