@@ -10,11 +10,12 @@ export class CryptoService {
 
   private apiUrl = 'https://app.alphapo.net/api/v2/invoices/create';
   private apiKey = process.env.ALPHAPO_API_KEY;
+  private secretKey = process.env.ALPHAPO_SECRET_KEY;
 
   private generateSignature(body: object): string {
     const jsonBody = JSON.stringify(body);
     return crypto
-      .createHmac('sha512', this.apiKey)
+      .createHmac('sha512', this.secretKey)
       .update(jsonBody)
       .digest('hex');
   }
