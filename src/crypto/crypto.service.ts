@@ -8,11 +8,16 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class CryptoService {
   constructor(private prisma: PrismaService) {}
 
-  private apiUrl = 'https://app.alphapo.net/api/v2/invoices/create';
+  private apiUrl =
+    'https://app.sandbox.cryptoprocessing.com/api/v2/invoices/create';
   private apiKey = process.env.ALPHAPO_API_KEY;
   private secretKey = process.env.ALPHAPO_SECRET_KEY;
 
   private generateSignature(body: object): string {
+    console.log('Generating signature for body:', body);
+    console.log('Using secret key:', this.secretKey);
+    console.log('Using API key:', this.apiKey);
+
     const jsonBody = JSON.stringify(body);
     return crypto
       .createHmac('sha512', this.secretKey)
