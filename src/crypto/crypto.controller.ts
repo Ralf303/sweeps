@@ -21,6 +21,7 @@ export class CryptoController {
   @Post('webhook/invoice')
   @UseGuards(WebhookGuard)
   async handleWebhook(@Body() data: any) {
+    console.log('Webhook received:', data);
     await this.cryptoService.handleCallback(data);
     return { status: 'ok' };
   }
