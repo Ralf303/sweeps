@@ -9,13 +9,13 @@ import { WebhookGuard } from './guards/webhook-signature.guard';
 export class CryptoController {
   constructor(private readonly cryptoService: CryptoService) {}
 
-  @Post('invoice')
   @ApiOperation({ summary: 'Создание инвойса' })
   @ApiBody({ type: CreateInvoiceDto })
   @ApiResponse({ status: 201, description: 'Инвойс успешно создан.' })
   @ApiResponse({ status: 400, description: 'Некорректный ввод данных.' })
-  createInvoice(@Body() dto: CreateInvoiceDto) {
-    return this.cryptoService.createInvoice(dto);
+  @Post('invoice')
+  async createInvoice(@Body() dto: CreateInvoiceDto) {
+    return await this.cryptoService.createInvoice(dto);
   }
 
   @Post('webhook/invoice')
