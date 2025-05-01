@@ -56,7 +56,6 @@ export class SignatureService {
       return false;
     }
 
-    // Используем ключи заголовков в том регистре, как указано в документации (X-...)
     const signingData = {
       ...body,
       'X-Merchant-Id': normalizedHeaders['x-merchant-id'],

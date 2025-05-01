@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { IUser } from 'src/user/types/user';
 
 @Injectable()
 export class AuthService {
@@ -37,7 +38,7 @@ export class AuthService {
     return referralCode;
   }
 
-  public async validateUser(email: string, password: string) {
+  public async validateUser(email: string, password: string): Promise<IUser> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -50,6 +51,11 @@ export class AuthService {
       email: user.email,
       nickname: user.nickname,
       role: user.role,
+      balance: user.balance,
+      referralsCount: user.referralsCount,
+      referralCode: user.referralCode,
+      referralAllLose: user.referralAllLose,
+      isBanned: user.isBanned,
     };
   }
 

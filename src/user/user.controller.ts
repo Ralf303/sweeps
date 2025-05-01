@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { UpdateUserDto, UpdateBalanceDto } from './dto/user.dto';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
+import { IUser } from './types/user';
 
 @ApiTags('User')
 @ApiBearerAuth()
@@ -52,7 +53,7 @@ export class UserController {
   @ApiOperation({ summary: 'Get current user' })
   @ApiResponse({ status: 200, description: 'User data' })
   @Get('me')
-  getCurrentUser(@Req() req) {
+  getCurrentUser(@Req() req: { user: IUser }) {
     return this.userService.getCurrentUser(req.user.id);
   }
 

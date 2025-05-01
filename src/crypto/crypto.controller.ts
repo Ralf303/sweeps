@@ -1,13 +1,19 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { CryptoService } from './crypto.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { WebhookGuard } from './guards/webhook-signature.guard';
 
+@ApiTags('crypto')
 @Controller('crypto')
 export class CryptoController {
   constructor(private readonly cryptoService: CryptoService) {}
 
   @Post('invoice')
+  @ApiOperation({ summary: 'Создание инвойса' })
+  @ApiBody({ type: CreateInvoiceDto })
+  @ApiResponse({ status: 201, description: 'Инвойс успешно создан.' })
+  @ApiResponse({ status: 400, description: 'Некорректный ввод данных.' })
   createInvoice(@Body() dto: CreateInvoiceDto) {
     return this.cryptoService.createInvoice(dto);
   }
