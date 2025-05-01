@@ -52,6 +52,24 @@ export class CryptoService {
     return response.data;
   }
 
+  async getCurrencyRate() {
+    const signature = this.generateSignature({});
+
+    const response = await axios.post(
+      'https://app.cryptoprocessing.com/api/v2/currencies/list',
+      {},
+      {
+        headers: {
+          'X-Processing-Key': this.apiKey,
+          'X-Processing-Signature': signature,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    return response.data;
+  }
+
   async handleCallback(data: any) {
     const amount = parseFloat(data.amount);
 

@@ -9,6 +9,13 @@ import { WebhookGuard } from './guards/webhook-signature.guard';
 export class CryptoController {
   constructor(private readonly cryptoService: CryptoService) {}
 
+  @ApiOperation({ summary: 'Получение курса валют' })
+  @ApiResponse({ status: 200, description: 'Курс валют' })
+  @Post('currency')
+  async getCurrencyRate() {
+    return await this.cryptoService.getCurrencyRate();
+  }
+
   @ApiOperation({ summary: 'Создание инвойса' })
   @ApiBody({ type: CreateInvoiceDto })
   @ApiResponse({ status: 201, description: 'Инвойс успешно создан.' })
