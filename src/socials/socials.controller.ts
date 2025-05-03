@@ -15,7 +15,6 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { SocialsService } from './socials.service';
-import { SocialLink } from '@prisma/client';
 import { UpdateSocialLinkDto } from './dto/socials.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 
@@ -31,7 +30,7 @@ export class SocialsController {
     type: [UpdateSocialLinkDto],
   })
   @Get()
-  async getAllSocialLinks(): Promise<SocialLink[]> {
+  async getAllSocialLinks(): Promise<any> {
     return this.socialsService.getAll();
   }
 
@@ -61,7 +60,7 @@ export class SocialsController {
   async updateSocialLink(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSocialLinkDto,
-  ): Promise<SocialLink> {
+  ): Promise<any> {
     return this.socialsService.updateLink(id, dto.url);
   }
 }
