@@ -5,6 +5,8 @@ import { SlotegratorService } from './services/slotegrator.service';
 import { SignatureService } from './services/signature.service';
 import { CallbackService } from './services/callback.service';
 import { UserService } from 'src/user/user.service';
+import { LiveGateway } from 'src/live/live.gateway';
+import { RedisService } from 'src/redis/redis.service';
 
 @Module({
   imports: [HttpModule],
@@ -14,6 +16,8 @@ import { UserService } from 'src/user/user.service';
     SignatureService,
     CallbackService,
     UserService,
+    RedisService,
+    LiveGateway,
   ],
 })
 export class SlotsModule {}

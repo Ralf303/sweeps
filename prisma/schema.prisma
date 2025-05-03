@@ -115,3 +115,9 @@ model ChatMessage {
 
     user User @relation(fields: [userId], references: [id])
 }
+
+model SocialLink {
+    id       Int    @id @default(autoincrement())
+    platform String
+    url      String
+}

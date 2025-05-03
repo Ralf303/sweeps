@@ -1,10 +1,58 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { UserService } from 'src/user/user.service';
+import * as bcrypt from 'bcrypt';
 import { StatsResponseDto } from './dto/stats.dto';
 
 @Injectable()
-export class StatsService {
-  constructor(private readonly prisma: PrismaService) {}
+export class AdminService extends UserService {
+  async banUser(id: string) {
+    const user = await this.getCurrentUser(id);
+    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.user.update({ where: { id }, data: { isBanned: true } });
+  }
+
+  async unbanUser(id: string) {
+    const user = await this.getCurrentUser(id);
+    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.user.update({
+      where: { id },
+      data: { isBanned: false },
+    });
+  }
+  async getUsers(options: { startIndex?: number; isBanned?: boolean }) {
+    const take = 100;
+    const skip = options.startIndex || 0;
+
+    return this.prisma.user.findMany({
+      skip,
+      take,
+      where: options.isBanned ? { isBanned: true } : undefined,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateUser(
+    id: string,
+    updateUserDto: { nickname?: string; password?: string },
+  ) {
+    const { nickname, password } = updateUserDto;
+    if (!nickname && !password) {
+      throw new BadRequestException('Nothing to update');
+    }
+
+    const updateData: any = {};
+    if (nickname) updateData.nickname = nickname;
+    if (password) updateData.password = await bcrypt.hash(password, 10);
+
+    return this.prisma.user.update({
+      where: { id },
+      data: updateData,
+    });
+  }
 
   async getUserStats(): Promise<StatsResponseDto> {
     const now = new Date();

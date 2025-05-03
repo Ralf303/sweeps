@@ -8,10 +8,16 @@ import {
   WinCallbackDto,
 } from '../dto/callback.dto';
 import { UserService } from 'src/user/user.service';
+import { RedisService } from 'src/redis/redis.service';
+import { LiveGateway } from 'src/live/live.gateway';
 
 @Injectable()
 export class CallbackService {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private readonly redisService: RedisService,
+    private readonly liveBetsGateway: LiveGateway,
+  ) {}
 
   private async validateRequest(data: { player_id: string }) {
     const user = await this.userService.getCurrentUser(data.player_id);
@@ -145,6 +151,27 @@ export class CallbackService {
       0,
       new Decimal(user.dailyLose).minus(winAmount),
     ).toNumber();
+
+    if (winAmount.greaterThan(0)) {
+      try {
+        const [gameMode, hasFlag] = await Promise.all([
+          this.redisService.getGameMode(data.player_id),
+          this.redisService.checkNotificationFlag(data.player_id),
+        ]);
+
+        if (gameMode && !hasFlag) {
+          await this.redisService.setNotificationFlag(data.player_id);
+
+          this.liveBetsGateway.sendLiveBetNotification({
+            gameName: gameMode,
+            playerName: user.nickname,
+            amount: winAmount.toNumber(),
+          });
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
 
     await this.userService.updateBalance(data.player_id, newBalance);
     await this.userService.updateDailyLose(data.player_id, newDailyLose);

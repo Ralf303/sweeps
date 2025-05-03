@@ -4,13 +4,12 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
 import { UserResponseDto } from './dto/user.dto';
 import { USER_SELECT_FIELDS } from './utils/user.select';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(protected readonly prisma: PrismaService) {}
 
   async markTransactionAsRefunded(transactionId: string) {
     return this.prisma.transaction.update({
@@ -32,40 +31,6 @@ export class UserService {
     return user;
   }
 
-  async banUser(id: string) {
-    const user = await this.getCurrentUser(id);
-    if (!user) throw new NotFoundException('User not found');
-    return this.prisma.user.update({ where: { id }, data: { isBanned: true } });
-  }
-
-  async unbanUser(id: string) {
-    const user = await this.getCurrentUser(id);
-    if (!user) throw new NotFoundException('User not found');
-    return this.prisma.user.update({
-      where: { id },
-      data: { isBanned: false },
-    });
-  }
-
-  async updateUser(
-    id: string,
-    updateUserDto: { nickname?: string; password?: string },
-  ) {
-    const { nickname, password } = updateUserDto;
-    if (!nickname && !password) {
-      throw new BadRequestException('Nothing to update');
-    }
-
-    const updateData: any = {};
-    if (nickname) updateData.nickname = nickname;
-    if (password) updateData.password = await bcrypt.hash(password, 10);
-
-    return this.prisma.user.update({
-      where: { id },
-      data: updateData,
-    });
-  }
-
   async updateBalance(id: string, amount: number) {
     if (amount < 0 || !Number.isFinite(amount)) {
       throw new BadRequestException('Invalid balance value');
@@ -83,18 +48,6 @@ export class UserService {
     return this.prisma.user.update({
       where: { id },
       data: { dailyLose: amount },
-    });
-  }
-
-  async getUsers(options: { startIndex?: number; isBanned?: boolean }) {
-    const take = 100;
-    const skip = options.startIndex || 0;
-
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      where: options.isBanned ? { isBanned: true } : undefined,
-      orderBy: { createdAt: 'desc' },
     });
   }
 

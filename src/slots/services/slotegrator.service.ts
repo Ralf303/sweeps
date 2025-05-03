@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { SignatureService } from './signature.service';
-import { InitDemoGameDto } from '../dto/init.demo.game.dto';
+import { InitDemoGameDto, InitGameDto } from '../dto/init.demo.game.dto';
 import { join } from 'path';
 import { writeFile } from 'fs';
 import { inspect } from 'util';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class SlotegratorService {
@@ -14,6 +15,7 @@ export class SlotegratorService {
   constructor(
     private readonly httpService: HttpService,
     private readonly signatureService: SignatureService,
+    private readonly redisService: RedisService,
   ) {}
 
   async getGames(params?: any): Promise<any> {
@@ -46,7 +48,7 @@ export class SlotegratorService {
     return response.data;
   }
 
-  async initGame(params: any): Promise<any> {
+  async initGame(params: InitGameDto): Promise<any> {
     try {
       const { headers } = this.signatureService.generateHeaders(params);
 
@@ -61,6 +63,7 @@ export class SlotegratorService {
         }),
       );
 
+      await this.redisService.setGameMode(params.player_id, params.game_name);
       return response.data;
     } catch (error: any) {
       console.error(error);

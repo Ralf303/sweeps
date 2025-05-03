@@ -21,13 +21,6 @@ export class ChatGateway {
     return message;
   }
 
-  // @SubscribeMessage('clearChat')
-  // async handleClearChat(@MessageBody() payload: { userId: string }) {
-  //   const result = await this.chatService.clearChat(payload.userId);
-  //   this.server.emit('chatCleared');
-  //   return result;
-  // }
-
   @SubscribeMessage('deleteMessage')
   async handleDeleteMessage(
     @MessageBody() payload: { messageId: string; userId: string },
@@ -40,3 +33,9 @@ export class ChatGateway {
     return result;
   }
 }
+// @SubscribeMessage('clearChat')
+// async handleClearChat(@MessageBody() payload: { userId: string }) {
+//   const result = await this.chatService.clearChat(payload.userId);
+//   this.server.emit('chatCleared');
+//   return result;
+// }
