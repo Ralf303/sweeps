@@ -7,7 +7,6 @@ export const USER_SELECT_FIELDS = {
   referralsCount: true,
   referralLevel: true,
   referralCode: true,
-  country: true,
   refPercentage: true,
   dailyLose: true,
   referralAllLose: true,

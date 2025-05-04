@@ -72,12 +72,6 @@ export class UserResponseDto {
   referralCode: string;
 
   @ApiProperty({
-    example: 'US',
-    description: 'Страна пользователя',
-  })
-  country?: string;
-
-  @ApiProperty({
     example: 10,
     description: 'Процент реферальных отчислений',
   })
