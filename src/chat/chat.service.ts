@@ -56,4 +56,12 @@ export class ChatService {
     await this.prisma.chatMessage.deleteMany({});
     return { message: 'Chat cleared successfully.' };
   }
+
+  async getPinnedMessage() {
+    const pinnedMessage = await this.prisma.chatMessage.findFirst({
+      where: { isPin: true },
+      include: { user: true },
+    });
+    return pinnedMessage;
+  }
 }

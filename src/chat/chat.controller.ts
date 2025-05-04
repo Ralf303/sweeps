@@ -32,4 +32,10 @@ export class ChatController {
   getMessages(@Query('skip') skip?: number, @Query('take') take?: number) {
     return this.chatService.loadMessages({ skip, take });
   }
+
+  @ApiOperation({ summary: 'Get pinned message' })
+  @Get('pinned')
+  getPinnedMessage() {
+    return this.chatService.getPinnedMessage();
+  }
 }

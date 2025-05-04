@@ -23,8 +23,6 @@ model User {
     isBanned        Boolean @default(false)
     referralCode    String  @unique @default("")
     current_session String?
-    ip              String?
-    country         String?
     refPercentage   Float   @default(0)
     regIp           String?
 
