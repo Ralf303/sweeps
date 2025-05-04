@@ -1,25 +1,43 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { CreateChatDto } from './dto/create-chat.dto';
+import { Injectable } from '@nestjs/common';
 import { PaginationDto } from './dto/pagination.dto';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  async sendMessage(createChatDto: CreateChatDto) {
-    console.log('Sending message:', createChatDto);
-
-    const newMessage = await this.prisma.chatMessage.create({
-      data: {
-        userId: createChatDto.userId,
-        text: createChatDto.text,
-      },
-      include: {
-        user: true,
-      },
+  async createMessage({ userId, text }: { userId: string; text: string }) {
+    return this.prisma.chatMessage.create({
+      data: { userId, text },
+      include: { user: true },
     });
-    return newMessage;
+  }
+
+  async deleteMessage(messageId: string, userId: string) {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+    });
+
+    if (message.userId !== userId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (user?.role !== 'admin') throw new Error('Unauthorized');
+    }
+
+    return this.prisma.chatMessage.delete({ where: { id: messageId } });
+  }
+
+  async pinMessage(messageId: string) {
+    await this.prisma.chatMessage.updateMany({
+      where: { isPin: true },
+      data: { isPin: false },
+    });
+
+    return this.prisma.chatMessage.update({
+      where: { id: messageId },
+      data: { isPin: true },
+    });
   }
 
   async loadMessages(pagination: PaginationDto) {
@@ -34,44 +52,8 @@ export class ChatService {
 
     return messages;
   }
-
-  // async clearChat(userId: string) {
-  //   console.log('Clearing chat for user:', userId);
-  //   const user = await this.prisma.user.findUnique({
-  //     where: { id: userId },
-  //   });
-  //   if (!user || user.role !== 'admin') {
-  //     throw new UnauthorizedException('Only admins can clear the chat.');
-  //   }
-  //   await this.prisma.chatMessage.deleteMany({});
-  //   return { message: 'Chat cleared successfully.' };
-  // }
-
-  async deleteMessage(messageId: string, userId: string) {
-    console.log('Deleting message:', messageId, 'for user:', userId);
-    const message = await this.prisma.chatMessage.findUnique({
-      where: { id: messageId },
-    });
-    if (!message) {
-      throw new Error('Message not found');
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-    if (!user) {
-      throw new UnauthorizedException('User not found.');
-    }
-
-    if (user.role !== 'admin' && message.userId !== userId) {
-      throw new UnauthorizedException(
-        'You are not authorized to delete this message.',
-      );
-    }
-
-    await this.prisma.chatMessage.delete({
-      where: { id: messageId },
-    });
-    return { message: 'Message deleted successfully.' };
+  async clearChat() {
+    await this.prisma.chatMessage.deleteMany({});
+    return { message: 'Chat cleared successfully.' };
   }
 }
