@@ -17,8 +17,10 @@ import {
 import { SocialsService } from './socials.service';
 import { UpdateSocialLinkDto } from './dto/socials.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 
 @ApiTags('socials')
+@UseGuards(JwtAuthGuard)
 @Controller('socials')
 export class SocialsController {
   constructor(private readonly socialsService: SocialsService) {}

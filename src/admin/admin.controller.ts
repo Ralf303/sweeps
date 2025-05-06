@@ -22,7 +22,6 @@ import { StatsResponseDto } from './dto/stats.dto';
 @ApiTags('Admin')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@UseGuards(AdminGuard)
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
@@ -31,7 +30,8 @@ export class AdminController {
     summary: 'Get list of users with optional pagination and ban filter',
   })
   @ApiResponse({ status: 200, description: 'List of users' })
-  @Get()
+  @UseGuards(AdminGuard)
+  @Get('users')
   getUsers(
     @Query('start') start: string,
     @Query('bannedOnly') bannedOnly: string,
@@ -43,6 +43,7 @@ export class AdminController {
 
   @ApiOperation({ summary: 'Ban user' })
   @ApiResponse({ status: 200, description: 'User banned' })
+  @UseGuards(AdminGuard)
   @Post('ban/:id')
   banUser(@Param('id') id: string) {
     return this.adminService.banUser(id);
@@ -50,6 +51,7 @@ export class AdminController {
 
   @ApiOperation({ summary: 'Unban user' })
   @ApiResponse({ status: 200, description: 'User unbanned' })
+  @UseGuards(AdminGuard)
   @Post('unban/:id')
   unbanUser(@Param('id') id: string) {
     return this.adminService.unbanUser(id);
@@ -57,6 +59,7 @@ export class AdminController {
 
   @ApiOperation({ summary: 'Update user data (nickname/password)' })
   @ApiResponse({ status: 200, description: 'User updated' })
+  @UseGuards(AdminGuard)
   @Post('update/:id')
   updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.adminService.updateUser(id, updateUserDto);
@@ -69,6 +72,7 @@ export class AdminController {
     type: StatsResponseDto,
   })
   @ApiResponse({ status: 500, description: 'Внутренняя ошибка сервера' })
+  @UseGuards(AdminGuard)
   @Get('stats')
   async getStats(): Promise<StatsResponseDto> {
     return this.adminService.getUserStats();
