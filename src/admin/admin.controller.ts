@@ -32,37 +32,40 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'List of users' })
   @UseGuards(AdminGuard)
   @Get('users')
-  getUsers(
+  async getUsers(
     @Query('start') start: string,
     @Query('bannedOnly') bannedOnly: string,
   ) {
     const startIndex = parseInt(start) || 0;
     const isBanned = bannedOnly === 'true';
-    return this.adminService.getUsers({ startIndex, isBanned });
+    return await this.adminService.getUsers({ startIndex, isBanned });
   }
 
   @ApiOperation({ summary: 'Ban user' })
   @ApiResponse({ status: 200, description: 'User banned' })
   @UseGuards(AdminGuard)
   @Post('ban/:id')
-  banUser(@Param('id') id: string) {
-    return this.adminService.banUser(id);
+  async banUser(@Param('id') id: string) {
+    return await this.adminService.banUser(id);
   }
 
   @ApiOperation({ summary: 'Unban user' })
   @ApiResponse({ status: 200, description: 'User unbanned' })
   @UseGuards(AdminGuard)
   @Post('unban/:id')
-  unbanUser(@Param('id') id: string) {
-    return this.adminService.unbanUser(id);
+  async unbanUser(@Param('id') id: string) {
+    return await this.adminService.unbanUser(id);
   }
 
   @ApiOperation({ summary: 'Update user data (nickname/password)' })
   @ApiResponse({ status: 200, description: 'User updated' })
   @UseGuards(AdminGuard)
   @Post('update/:id')
-  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.adminService.updateUser(id, updateUserDto);
+  async updateUser(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return await this.adminService.updateUser(id, updateUserDto);
   }
 
   @ApiOperation({ summary: 'Получить статистику системы' })
@@ -75,6 +78,6 @@ export class AdminController {
   @UseGuards(AdminGuard)
   @Get('stats')
   async getStats(): Promise<StatsResponseDto> {
-    return this.adminService.getUserStats();
+    return await this.adminService.getUserStats();
   }
 }

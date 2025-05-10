@@ -19,6 +19,9 @@ export class WsAuthGuard implements CanActivate {
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET || 'super-secret-key',
       });
+      console.log(process.env.JWT_SECRET);
+      console.log(payload);
+
       client.user = payload;
       return true;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

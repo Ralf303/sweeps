@@ -29,13 +29,16 @@ export class ChatController {
     description: 'How many messages to take',
   })
   @Get('messages')
-  getMessages(@Query('skip') skip?: number, @Query('take') take?: number) {
-    return this.chatService.loadMessages({ skip, take });
+  async getMessages(
+    @Query('skip') skip?: number,
+    @Query('take') take?: number,
+  ) {
+    return await this.chatService.loadMessages({ skip, take });
   }
 
   @ApiOperation({ summary: 'Get pinned message' })
   @Get('pinned')
-  getPinnedMessage() {
-    return this.chatService.getPinnedMessage();
+  async getPinnedMessage() {
+    return await this.chatService.getPinnedMessage();
   }
 }

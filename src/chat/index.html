@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>WebSocket Chat</title>
+        <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+        <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --background: #ecf0f1;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .pinned-message {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid var(--secondary);
+        }
+
+        .chat-box {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .pin-btn {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .send-btn {
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+        }
+
+        .auth-section {
+            margin-bottom: 20px;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="pinned-message" id="pinnedMessage"></div>
+            <div class="chat-box">
+                <div class="messages" id="messages"></div>
+                <div class="input-group">
+                    <input type="text" id="messageInput">
+                    <button class="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+            <div class="auth-section">
+                <input type="text" id="tokenInput" value="ВАШ_ТОКЕН">
+                <button onclick="connectSocket()">Connect</button>
+            </div>
+        </div>
+        <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+        <script>
+        const API_BASE = 'https://sweeps.website/api';
+        let socket;
+        let currentUser = {};
+
+        async function connectSocket() {
+            const token = document.getElementById('tokenInput').value;
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                currentUser = {
+                    id: payload.id,
+                    role: payload.role
+                };
+            } catch (e) {
+                return alert('Invalid token');
+            }
+
+            // Исправление подключения WebSocket
+            socket = io('wss://sweeps.website/chat', {
+                path: '/chat',
+                transports: ['websocket'],
+                auth: { token: `Bearer ${token}` }
+            });
+
+            setupSocketListeners();
+            loadInitialData(token);
+        }
+
+        async function loadInitialData(token) {
+            try {
+                // Загрузка сообщений
+                const messagesRes = await fetch(`${API_BASE}/chat/messages?skip=0&take=100`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (!messagesRes.ok) throw new Error('Failed to load messages');
+                const messages = await messagesRes.json();
+                renderMessages(messages);
+
+                // Загрузка закрепленного сообщения
+                const pinnedRes = await fetch(`${API_BASE}/chat/pinned`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (pinnedRes.status === 404) {
+                    renderPinnedMessage(null);
+                    return;
+                }
+                
+                const pinned = await pinnedRes.json();
+                renderPinnedMessage(pinned);
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+        }
+        // Настройка обработчиков событий сокета
+        function setupSocketListeners() {
+            socket.on('message:new', message => {
+                addMessage(message);
+            });
+
+            socket.on('message:deleted', messageId => {
+                document.getElementById(messageId)?.remove();
+            });
+
+            socket.on('message:pinned', async messageId => {
+                const res = await fetch(`${API_BASE}/api/chat/messages/${messageId}`);
+                const message = await res.json();
+                renderPinnedMessage(message);
+            });
+        }
+
+        // Отправка сообщения
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            socket.emit('message:send', text);
+            input.value = '';
+        }
+
+        // Удаление сообщения
+        function deleteMessage(messageId) {
+            socket.emit('message:delete', messageId);
+        }
+
+        // Закрепление сообщения
+        function pinMessage(messageId) {
+            socket.emit('message:pin', messageId);
+        }
+
+        // Рендер сообщений
+        function renderMessages(messages) {
+            const container = document.getElementById('messages');
+            container.innerHTML = messages.reverse().map(msg => `
+                <div class="message" id="${msg.id}">
+                    <div>
+                        <strong>${msg.user?.username || 'Аноним'}:</strong>
+                        ${msg.text}
+                    </div>
+                    <div class="message-actions">
+                        ${currentUser.role === 'admin' ? `
+                            <button class="pin-btn" onclick="pinMessage('${msg.id}')">Закрепить</button>
+                        ` : ''}
+                        ${msg.userId === currentUser.id || currentUser.role === 'admin' ? `
+                            <button class="delete-btn" onclick="deleteMessage('${msg.id}')">Удалить</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Добавление нового сообщения
+        function addMessage(message) {
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = 'message';
+            div.id = message.id;
+            div.innerHTML = `
+                <div>
+                    <strong>${message.user?.username || 'Аноним'}:</strong>
+                    ${message.text}
+                </div>
+                <div class="message-actions">
+                    ${currentUser.role === 'admin' ? `
+                        <button class="pin-btn" onclick="pinMessage('${message.id}')">Закрепить</button>
+                    ` : ''}
+                    ${message.userId === currentUser.id || currentUser.role === 'admin' ? `
+                        <button class="delete-btn" onclick="deleteMessage('${message.id}')">Удалить</button>
+                    ` : ''}
+                </div>
+            `;
+            container.prepend(div);
+        }
+
+        // Отображение закрепленного сообщения
+        function renderPinnedMessage(message) {
+            const container = document.getElementById('pinnedMessage');
+            if (!message?.text) {
+                container.innerHTML = 'Нет закрепленных сообщений';
+                return;
+            }
+            
+            container.innerHTML = `
+                📌 <strong>Закреплено:</strong> 
+                ${message.text} 
+                (${new Date(message.createdAt).toLocaleString()})
+            `;
+        }
+
+        // Обработка нажатия Enter
+        document.getElementById('messageInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        </script>
+    </body>
+</html>
