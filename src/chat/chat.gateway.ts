@@ -6,19 +6,19 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
-// import { UseGuards } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { ChatService } from './chat.service';
-// import { WsAuthGuard } from './guards/ws-auth.guard';
-// import { WsAdminGuard } from './guards/ws-admin.guard';
+import { WsAuthGuard } from './guards/ws-auth.guard';
+import { WsAdminGuard } from './guards/ws-admin.guard';
 
-@WebSocketGateway({ namespace: '/chat' })
+@WebSocketGateway({ namespace: '/chat', path: '/chat' })
 export class ChatGateway {
   @WebSocketServer() server: Server;
 
   constructor(private readonly chatService: ChatService) {}
 
   @SubscribeMessage('message:send')
-  // @UseGuards(WsAuthGuard)
+  @UseGuards(WsAuthGuard)
   async handleMessage(
     @ConnectedSocket() client: any,
     @MessageBody() text: string,
@@ -31,7 +31,7 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('message:delete')
-  // @UseGuards(WsAuthGuard)
+  @UseGuards(WsAuthGuard)
   async deleteMessage(
     @ConnectedSocket() client: any,
     @MessageBody() messageId: string,
@@ -41,14 +41,14 @@ export class ChatGateway {
   }
 
   @SubscribeMessage('message:pin')
-  // @UseGuards(WsAuthGuard, WsAdminGuard)
+  @UseGuards(WsAuthGuard, WsAdminGuard)
   async pinMessage(@MessageBody() messageId: string) {
     await this.chatService.pinMessage(messageId);
     this.server.emit('message:pinned', messageId);
   }
 
   @SubscribeMessage('clearChat')
-  // @UseGuards(WsAuthGuard, WsAdminGuard)
+  @UseGuards(WsAuthGuard, WsAdminGuard)
   async handleClearChat() {
     const result = await this.chatService.clearChat();
     this.server.emit('chatCleared');
