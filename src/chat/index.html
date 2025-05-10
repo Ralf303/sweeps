@@ -142,11 +142,14 @@
 
             // Исправление подключения WebSocket
         // Клиентский код
-const socket = io('https://sweeps.website/chat', {
+ socket = io('https://sweeps.website/chat', {
   path: '/chat/socket.io', // Добавьте path
   transports: ['websocket'],
   auth: {
     token: `Bearer ${token}`
+  },
+  extraHeaders: {
+    "Authorization": `Bearer ${token}` // Дублируем для некоторых версий socket.io
   }
 });
 
