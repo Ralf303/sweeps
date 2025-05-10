@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { LoggingInterceptor } from './logger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { CustomIoAdapter } from './adapters/socket.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -18,6 +19,7 @@ async function bootstrap() {
   });
   app.useGlobalInterceptors(new LoggingInterceptor());
   app.useWebSocketAdapter(new IoAdapter(app));
+  app.useWebSocketAdapter(new CustomIoAdapter(app));
 
   const config = new DocumentBuilder()
     .setTitle('Sweeps API Docs')

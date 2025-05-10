@@ -141,14 +141,18 @@
             }
 
             // Исправление подключения WebSocket
-            socket = io('wss://sweeps.website/chat', {
-                path: '/chat',
-                transports: ['websocket'],
-                auth: { token: `Bearer ${token}` }
-            });
+        // Клиентский код
+const socket = io('https://sweeps.website/chat', {
+  path: '/chat/socket.io', // Добавьте path
+  transports: ['websocket'],
+  auth: {
+    token: `Bearer ${token}`
+  }
+});
 
             setupSocketListeners();
-            loadInitialData(token);
+           await loadInitialData(token);
+           
         }
 
         async function loadInitialData(token) {
@@ -158,8 +162,9 @@
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 
-                if (!messagesRes.ok) throw new Error('Failed to load messages');
                 const messages = await messagesRes.json();
+               console.log(messages);
+               
                 renderMessages(messages);
 
                 // Загрузка закрепленного сообщения
