@@ -141,14 +141,11 @@
             }
 
             // Исправление подключения WebSocket
-        // Клиентский код
-const socket = io('https://sweeps.website/chat', {
-  path: '/chat/socket.io', // Добавьте path
-  transports: ['websocket'],
-  auth: {
-    token: `Bearer ${token}`
-  }
-});
+            socket = io('wss://sweeps.website/chat', {
+                path: '/chat',
+                transports: ['websocket'],
+                auth: { token: `Bearer ${token}` }
+            });
 
             setupSocketListeners();
            await loadInitialData(token);

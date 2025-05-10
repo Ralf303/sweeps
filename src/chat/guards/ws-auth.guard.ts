@@ -9,31 +9,28 @@ export class WsAuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const client = context.switchToWs().getClient();
-    console.log('Client:', client); // Для дебага
+    // 1) достаём «сырой» токен
+    let token: string | undefined =
+      client.handshake.auth?.token || client.handshake.headers.authorization;
 
-    // Получаем токен из двух возможных источников
-    const token =
-      client.handshake.auth?.token ||
-      client.handshake.headers.authorization?.split(' ')[1];
+    if (!token) {
+      throw new WsException('Missing token');
+    }
 
-    if (!token) throw new WsException('Missing token');
+    // 2) если прислали вместе с "Bearer ", отрезаем
+    if (token.startsWith('Bearer ')) {
+      token = token.slice(7);
+    }
 
-    console.log('Extracted token:', token); // Для дебага
-    console.log('JWT_SECRET:', process.env.JWT_SECRET); // Проверка секрета
-
-    // ws-auth.guard.ts
     try {
       const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET || 'super-secret-key',
+        secret: process.env.JWT_SECRET,
       });
-      console.log('Auth success for user:', payload.sub);
       client.user = payload;
       return true;
-    } catch (e) {
-      console.error('JWT verification failed:', {
-        error: e.message,
-        token: token.substring(0, 10) + '...', // Логируем часть токена для отладки
-      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e: any) {
       throw new WsException('Invalid token');
     }
   }
