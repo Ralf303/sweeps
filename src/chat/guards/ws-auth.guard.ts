@@ -9,7 +9,6 @@ export class WsAuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const client = context.switchToWs().getClient();
-    // 1) достаём «сырой» токен
     let token: string | undefined =
       client.handshake.auth?.token || client.handshake.headers.authorization;
 
@@ -17,7 +16,6 @@ export class WsAuthGuard implements CanActivate {
       throw new WsException('Missing token');
     }
 
-    // 2) если прислали вместе с "Bearer ", отрезаем
     if (token.startsWith('Bearer ')) {
       token = token.slice(7);
     }
@@ -26,6 +24,8 @@ export class WsAuthGuard implements CanActivate {
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET,
       });
+      console.log('WsAuthGuard', payload);
+
       client.user = payload;
       return true;
 

@@ -24,7 +24,7 @@ export class ChatGateway {
     @MessageBody() text: string,
   ) {
     const message = await this.chatService.createMessage({
-      userId: client.user.sub,
+      userId: client.user.id,
       text,
     });
     this.server.emit('message:new', message);
@@ -36,7 +36,7 @@ export class ChatGateway {
     @ConnectedSocket() client: any,
     @MessageBody() messageId: string,
   ) {
-    await this.chatService.deleteMessage(messageId, client.user.sub);
+    await this.chatService.deleteMessage(messageId, client.user.id);
     this.server.emit('message:deleted', messageId);
   }
 
