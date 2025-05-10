@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { LoggingInterceptor } from './logger';
-import { IoAdapter } from '@nestjs/platform-socket.io';
 import { CustomIoAdapter } from './adapters/socket.adapter';
 
 async function bootstrap() {
@@ -11,14 +10,12 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin: '*',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
+    origin: ['https://sweeps.website', 'https://www.sweeps.website'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization',
     credentials: true,
   });
   app.useGlobalInterceptors(new LoggingInterceptor());
-  app.useWebSocketAdapter(new IoAdapter(app));
   app.useWebSocketAdapter(new CustomIoAdapter(app));
 
   const config = new DocumentBuilder()
