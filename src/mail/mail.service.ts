@@ -17,8 +17,8 @@ export class MailService {
     await this.transporter.sendMail({
       from: `"Support" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: 'Код для сброса пароля',
-      text: `Ваш код для сброса пароля: ${code}`,
+      subject: 'Password Reset Code',
+      text: `Your password reset code: ${code}`,
     });
   }
 }
