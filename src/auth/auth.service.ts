@@ -7,13 +7,21 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ValidateDto } from './dto/auth.dto';
+import { MailService } from 'src/mail/mail.service';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
+    private redis: RedisService,
   ) {}
+
+  private generateCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
 
   private generateReferralCode(length = 8): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -117,5 +125,30 @@ export class AuthService {
     });
 
     return this.login(user.email, password);
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new BadRequestException('Пользователь не найден');
+
+    const code = this.generateCode();
+    await this.redis.setInvoice(`forgot:${email}`, code, 900);
+    await this.mailService.sendResetCode(email, code);
+
+    return { message: 'Код отправлен на email' };
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const stored = await this.redis.getInvoice(`forgot:${email}`);
+    if (stored !== code) throw new BadRequestException('Неверный код');
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { email },
+      data: { password: hash },
+    });
+    await this.redis.deleteInvoice(`forgot:${email}`);
+
+    return { message: 'Пароль успешно обновлён' };
   }
 }
