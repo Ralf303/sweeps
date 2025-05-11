@@ -48,6 +48,12 @@ export class UserResponseDto {
   role: string;
 
   @ApiProperty({
+    example: '/uploads/avatars/12345.png',
+    description: 'URL аватара пользователя',
+  })
+  avatar: string;
+
+  @ApiProperty({
     example: 100.5,
     description: 'Баланс пользователя',
   })

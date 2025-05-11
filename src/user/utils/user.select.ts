@@ -3,6 +3,7 @@ export const USER_SELECT_FIELDS = {
   nickname: true,
   email: true,
   role: true,
+  avatar: true,
   balance: true,
   referralsCount: true,
   referralLevel: true,

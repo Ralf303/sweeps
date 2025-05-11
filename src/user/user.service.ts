@@ -157,4 +157,17 @@ export class UserService {
 
     return aggregations._sum.amount || 0;
   }
+
+  async uploadAvatar(data: { userId: string }, file: { filename: string }) {
+    if (!file) throw new Error('Image is required');
+    const imageUrl = `/uploads/avatars/${file.filename}`;
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: data.userId },
+      data: { avatar: imageUrl },
+      select: USER_SELECT_FIELDS,
+    });
+
+    return updatedUser;
+  }
 }
