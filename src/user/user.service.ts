@@ -158,12 +158,12 @@ export class UserService {
     return aggregations._sum.amount || 0;
   }
 
-  async uploadAvatar(data: { userId: string }, file: { filename: string }) {
+  async uploadAvatar(userId: string, file: { filename: string }) {
     if (!file) throw new Error('Image is required');
     const imageUrl = `/uploads/avatars/${file.filename}`;
 
     const updatedUser = await this.prisma.user.update({
-      where: { id: data.userId },
+      where: { id: userId },
       data: { avatar: imageUrl },
       select: USER_SELECT_FIELDS,
     });

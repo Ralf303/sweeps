@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Get,
   Param,
@@ -51,7 +50,6 @@ export class UserController {
     schema: {
       type: 'object',
       properties: {
-        userId: { type: 'string' },
         image: { type: 'string', format: 'binary' },
       },
     },
@@ -72,7 +70,10 @@ export class UserController {
       }),
     }),
   )
-  uploadAvatar(@Body() body: { userId: string }, @UploadedFile() file: any) {
-    return this.userService.uploadAvatar(body, file);
+  uploadAvatar(
+    @Req() req: { user: UserResponseDto },
+    @UploadedFile() file: any,
+  ) {
+    return this.userService.uploadAvatar(req.user.id, file);
   }
 }
