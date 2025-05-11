@@ -58,7 +58,7 @@ export class UserController {
   @UseInterceptors(
     FileInterceptor('image', {
       storage: diskStorage({
-        destination: '/var/www/uploads/banners/',
+        destination: '/var/www/uploads/avatars/',
         filename: (
           _: any,
           file: { originalname: string },
