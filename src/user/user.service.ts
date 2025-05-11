@@ -107,7 +107,6 @@ export class UserService {
         bet_transaction_id: data.bet_transaction_id,
         balanceBefore: data.balanceBefore,
         balanceAfter: data.balanceAfter,
-        multiplier: data.multiplier,
         profit: data.profit,
       },
     });
