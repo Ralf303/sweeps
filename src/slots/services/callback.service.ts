@@ -90,6 +90,12 @@ export class CallbackService {
     const balanceAfter = balanceBefore.minus(betAmount);
     const newBalance = balanceAfter.toNumber();
 
+    await this.redisService.setBetTransaction(
+      data.player_id,
+      betAmount.toNumber(),
+      1200,
+    );
+
     await this.userService.updateBalance(data.player_id, newBalance);
     await this.userService.updateDailyLose(
       data.player_id,
@@ -118,7 +124,6 @@ export class CallbackService {
 
   async handleWin(data: WinCallbackDto) {
     const user = await this.validateRequest(data);
-    console.log('handleWin', data);
 
     if (!data.game_uuid || !data.round_id) {
       throw new HttpException(
@@ -194,7 +199,8 @@ export class CallbackService {
         new Decimal(0),
       ).toNumber(),
     );
-
+    const gameName = await this.redisService.getGameMode(data.player_id);
+    const bet = await this.redisService.getBetTransaction(data.player_id);
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
@@ -207,6 +213,8 @@ export class CallbackService {
       balanceBefore: balanceBefore.toNumber(),
       balanceAfter: balanceAfter.toNumber(),
       profit,
+      gameName,
+      bet,
     });
 
     return {

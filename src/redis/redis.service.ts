@@ -44,4 +44,13 @@ export class RedisService {
   async checkNotificationFlag(playerId: string): Promise<boolean> {
     return (await this.redis.exists(`notification_flag:${playerId}`)) === 1;
   }
+
+  async setBetTransaction(playerId: string, bet: number, ttlSeconds = 1200) {
+    await this.redis.setex(`bet_transaction:${playerId}`, ttlSeconds, bet);
+  }
+
+  async getBetTransaction(playerId: string): Promise<number | null> {
+    const value = await this.redis.get(`bet_transaction:${playerId}`);
+    return value ? parseFloat(value) : null;
+  }
 }

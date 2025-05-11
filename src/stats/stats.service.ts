@@ -19,8 +19,9 @@ export class StatsService {
         user: { select: { id: true, nickname: true } },
         game_uuid: true,
         created_at: true,
-        amount: true,
         profit: true,
+        bet: true,
+        gameName: true,
       },
     });
   }
@@ -72,6 +73,8 @@ export class StatsService {
         balanceBefore: true,
         balanceAfter: true,
         profit: true,
+        bet: true,
+        gameName: true,
         bet_transaction: {
           select: { amount: true },
         },

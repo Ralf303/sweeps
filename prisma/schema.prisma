@@ -71,6 +71,8 @@ model Transaction {
     balanceBefore Decimal? @db.Decimal(18, 8)
     balanceAfter  Decimal? @db.Decimal(18, 8)
     profit        Decimal? @db.Decimal(18, 8)
+    gameName      String?
+    bet           Decimal? @db.Decimal(18, 8)
 
     user   User   @relation(fields: [userId], references: [id])
     userId String

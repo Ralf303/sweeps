@@ -91,9 +91,9 @@ export class UserService {
     balanceAfter?: number;
     multiplier?: number | null;
     profit?: number;
+    gameName?: string;
+    bet?: number;
   }) {
-    console.log(data);
-
     return this.prisma.transaction.create({
       data: {
         transaction_id: data.transaction_id,
@@ -108,6 +108,8 @@ export class UserService {
         balanceBefore: data.balanceBefore,
         balanceAfter: data.balanceAfter,
         profit: data.profit,
+        gameName: data.gameName,
+        bet: data.bet,
       },
     });
   }
