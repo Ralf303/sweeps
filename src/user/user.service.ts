@@ -47,7 +47,7 @@ export class UserService {
     }
     return this.prisma.user.update({
       where: { id },
-      data: { dailyLose: amount },
+      data: { dailyLose: amount, globalLose: { increment: amount } },
     });
   }
 
@@ -87,6 +87,10 @@ export class UserService {
     game_uuid?: string;
     session_id?: string;
     bet_transaction_id?: string;
+    balanceBefore?: number;
+    balanceAfter?: number;
+    multiplier?: number | null;
+    profit?: number;
   }) {
     return this.prisma.transaction.create({
       data: {
@@ -99,9 +103,14 @@ export class UserService {
         session_id: data.session_id,
         userId: data.player_id,
         bet_transaction_id: data.bet_transaction_id,
+        balanceBefore: data.balanceBefore,
+        balanceAfter: data.balanceAfter,
+        multiplier: data.multiplier,
+        profit: data.profit,
       },
     });
   }
+
   async markTransactionAsRolledBack(transactionId: string) {
     return this.prisma.transaction.update({
       where: { transaction_id: transactionId },

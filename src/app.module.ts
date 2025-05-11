@@ -13,6 +13,7 @@ import { CryptoModule } from './crypto/crypto.module';
 import { AdminModule } from './admin/admin.module';
 import { SocialsModule } from './socials/socials.module';
 import { LiveModule } from './live/live.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LiveModule } from './live/live.module';
     AdminModule,
     SocialsModule,
     LiveModule,
+    StatsModule,
   ],
 })
 export class AppModule {}

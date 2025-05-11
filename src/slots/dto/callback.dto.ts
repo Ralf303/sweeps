@@ -24,6 +24,7 @@ export class BetCallbackDto extends TransactionBaseDto {
 export class WinCallbackDto extends TransactionBaseDto {
   action: 'win';
   amount: number;
+  bet_transaction_id: string;
   type:
     | 'win'
     | 'jackpot'

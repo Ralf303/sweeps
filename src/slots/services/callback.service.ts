@@ -1,5 +1,8 @@
-import { Decimal } from 'decimal.js';
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import Decimal from 'decimal.js';
+import { LiveGateway } from 'src/live/live.gateway';
+import { RedisService } from 'src/redis/redis.service';
+import { UserService } from 'src/user/user.service';
 import {
   BalanceCallbackDto,
   BetCallbackDto,
@@ -7,9 +10,6 @@ import {
   RollbackCallbackDto,
   WinCallbackDto,
 } from '../dto/callback.dto';
-import { UserService } from 'src/user/user.service';
-import { RedisService } from 'src/redis/redis.service';
-import { LiveGateway } from 'src/live/live.gateway';
 
 @Injectable()
 export class CallbackService {
@@ -76,8 +76,8 @@ export class CallbackService {
       );
     }
 
-    const currentBalance = new Decimal(user.balance);
-    if (currentBalance.lessThan(betAmount)) {
+    const balanceBefore = new Decimal(user.balance);
+    if (balanceBefore.lessThan(betAmount)) {
       throw new HttpException(
         {
           error_code: 'INSUFFICIENT_FUNDS',
@@ -87,7 +87,8 @@ export class CallbackService {
       );
     }
 
-    const newBalance = currentBalance.minus(betAmount).toNumber();
+    const balanceAfter = balanceBefore.minus(betAmount);
+    const newBalance = balanceAfter.toNumber();
 
     await this.userService.updateBalance(data.player_id, newBalance);
     await this.userService.updateDailyLose(
@@ -104,16 +105,21 @@ export class CallbackService {
       round_id: data.round_id,
       game_uuid: data.game_uuid,
       session_id: data.session_id,
+      balanceBefore: balanceBefore.toNumber(),
+      balanceAfter: balanceAfter.toNumber(),
+      multiplier: null,
+      profit: new Decimal(0).toNumber(),
     });
 
     return {
-      balance: new Decimal(newBalance).toFixed(2),
+      balance: balanceAfter.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
 
   async handleWin(data: WinCallbackDto) {
     const user = await this.validateRequest(data);
+    console.log('handleWin', data);
 
     if (!data.game_uuid || !data.round_id) {
       throw new HttpException(
@@ -146,12 +152,26 @@ export class CallbackService {
       );
     }
 
-    const newBalance = new Decimal(user.balance).plus(winAmount).toNumber();
-    const newDailyLose = Decimal.max(
-      0,
-      new Decimal(user.dailyLose).minus(winAmount),
-    ).toNumber();
+    // Получаем оригинальную ставку для расчета x и прибыли
+    const originalBet = await this.userService.findTransaction(
+      data.transaction_id,
+    );
+    const betAmount = originalBet
+      ? new Decimal(originalBet.amount)
+      : new Decimal(0);
 
+    const balanceBefore = new Decimal(user.balance);
+    const balanceAfter = balanceBefore.plus(winAmount);
+    const newBalance = balanceAfter.toNumber();
+
+    const multiplier = betAmount.greaterThan(0)
+      ? winAmount.dividedBy(betAmount).toNumber()
+      : null;
+    const profit = betAmount.greaterThan(0)
+      ? winAmount.minus(betAmount).toNumber()
+      : winAmount.toNumber();
+
+    // Нотификации
     if (winAmount.greaterThan(0)) {
       try {
         const [gameMode, hasFlag] = await Promise.all([
@@ -161,7 +181,6 @@ export class CallbackService {
 
         if (gameMode && !hasFlag) {
           await this.redisService.setNotificationFlag(data.player_id);
-
           this.liveBetsGateway.sendLiveBetNotification({
             gameName: gameMode,
             playerName: user.nickname,
@@ -174,7 +193,13 @@ export class CallbackService {
     }
 
     await this.userService.updateBalance(data.player_id, newBalance);
-    await this.userService.updateDailyLose(data.player_id, newDailyLose);
+    await this.userService.updateDailyLose(
+      data.player_id,
+      Decimal.max(
+        new Decimal(user.dailyLose).minus(winAmount),
+        new Decimal(0),
+      ).toNumber(),
+    );
 
     await this.userService.saveTransaction({
       player_id: data.player_id,
@@ -184,10 +209,15 @@ export class CallbackService {
       currency: data.currency,
       round_id: data.round_id,
       game_uuid: data.game_uuid,
+      bet_transaction_id: data.bet_transaction_id,
+      balanceBefore: balanceBefore.toNumber(),
+      balanceAfter: balanceAfter.toNumber(),
+      multiplier,
+      profit,
     });
 
     return {
-      balance: new Decimal(newBalance).toFixed(2),
+      balance: balanceAfter.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
@@ -257,7 +287,9 @@ export class CallbackService {
       );
     }
 
-    const newBalance = new Decimal(user.balance).plus(refundAmount).toNumber();
+    const balanceBefore = new Decimal(user.balance);
+    const balanceAfter = balanceBefore.plus(refundAmount);
+    const newBalance = balanceAfter.toNumber();
 
     await this.userService.updateBalance(data.player_id, newBalance);
     await this.userService.updateRefundedAmount(
@@ -274,10 +306,14 @@ export class CallbackService {
       round_id: data.round_id,
       game_uuid: data.game_uuid,
       bet_transaction_id: data.bet_transaction_id,
+      balanceBefore: balanceBefore.toNumber(),
+      balanceAfter: balanceAfter.toNumber(),
+      multiplier: null,
+      profit: refundAmount,
     });
 
     return {
-      balance: new Decimal(newBalance).toFixed(2),
+      balance: balanceAfter.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
@@ -340,7 +376,9 @@ export class CallbackService {
           : balanceChange.minus(tx.amount);
     }
 
-    const newBalance = new Decimal(user.balance).plus(balanceChange).toNumber();
+    const balanceBefore = new Decimal(user.balance);
+    const balanceAfter = balanceBefore.plus(balanceChange);
+    const newBalance = balanceAfter.toNumber();
 
     await this.userService.updateBalance(data.player_id, newBalance);
     await this.userService.markTransactionsAsRolledBack(
@@ -355,10 +393,14 @@ export class CallbackService {
       currency: baseCurrency,
       round_id: data.round_id,
       game_uuid: baseGameUuid,
+      balanceBefore: balanceBefore.toNumber(),
+      balanceAfter: balanceAfter.toNumber(),
+      multiplier: null,
+      profit: balanceChange.toNumber(),
     });
 
     return {
-      balance: new Decimal(newBalance).toFixed(2),
+      balance: balanceAfter.toFixed(2),
       transaction_id: data.transaction_id,
     };
   }
