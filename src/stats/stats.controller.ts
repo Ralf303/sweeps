@@ -31,6 +31,7 @@ export class StatsController {
     description: 'Returns list of top wins sorted by multiplier',
   })
   getLeaderboard(@Query('offset') offset = '0') {
+    console.log('getLeaderboard', offset);
     return this.stats.getLeaderboardByMaxX(+offset);
   }
 
@@ -49,6 +50,7 @@ export class StatsController {
     description: 'Returns list of referrals with their globalLose stats',
   })
   getReferrals(@Req() req: any, @Query('offset') offset = '0') {
+    console.log('getReferrals', req.user.id, offset);
     return this.stats.getUserReferralsStats(req.user.id, +offset);
   }
 
@@ -65,6 +67,7 @@ export class StatsController {
     description: 'Returns crypto transactions history',
   })
   getCrypto(@Req() req: any, @Query('offset') offset = '0') {
+    console.log('getCrypto', req.user.id, offset);
     return this.stats.getCryptoHistory(req.user.id, +offset);
   }
 
@@ -84,6 +87,8 @@ export class StatsController {
       'Returns game history records with balanceBefore, bet, multiplier, profit, balanceAfter',
   })
   getGames(@Req() req: any, @Query('offset') offset = '0') {
+    console.log('getGames', req.user.id, offset);
+
     return this.stats.getGameHistory(req.user.id, +offset);
   }
 }
