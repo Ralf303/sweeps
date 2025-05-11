@@ -30,11 +30,40 @@ export class AuthController {
     return this.authService.login(body.email, body.password);
   }
 
+  @ApiOperation({ summary: 'Запрос кода для сброса пароля' })
+  @ApiResponse({
+    status: 200,
+    description: 'Код успешно отправлен на email',
+    schema: {
+      example: { message: 'Код отправлен на email' },
+    },
+  })
+  @ApiBody({ type: ForgotDto })
   @Post('forgot-password')
   forgot(@Body() dto: ForgotDto) {
     return this.authService.forgotPassword(dto.email);
   }
 
+  @ApiOperation({ summary: 'Сброс пароля по коду из письма' })
+  @ApiResponse({
+    status: 200,
+    description: 'Пароль успешно обновлён',
+    schema: {
+      example: { message: 'Пароль успешно обновлён' },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Неверный код или другие ошибки валидации',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: 'Неверный код',
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiBody({ type: ResetDto })
   @Post('reset-password')
   reset(@Body() dto: ResetDto) {
     return this.authService.resetPassword(dto.email, dto.code, dto.newPassword);
