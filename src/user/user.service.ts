@@ -92,6 +92,8 @@ export class UserService {
     multiplier?: number | null;
     profit?: number;
   }) {
+    console.log(data);
+
     return this.prisma.transaction.create({
       data: {
         transaction_id: data.transaction_id,

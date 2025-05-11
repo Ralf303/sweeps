@@ -152,7 +152,6 @@ export class CallbackService {
       );
     }
 
-    // Получаем оригинальную ставку для расчета x и прибыли
     const originalBet = await this.userService.findTransaction(
       data.transaction_id,
     );
