@@ -11,9 +11,8 @@ export class StatsService {
     return this.prisma.transaction.findMany({
       where: {
         action: 'win',
-        multiplier: { not: null },
       },
-      orderBy: { multiplier: 'desc' },
+      orderBy: { profit: 'desc' },
       take: this.LIMIT,
       skip: offset,
       select: {
@@ -21,7 +20,6 @@ export class StatsService {
         game_uuid: true,
         created_at: true,
         amount: true,
-        multiplier: true,
         profit: true,
       },
     });
@@ -64,8 +62,6 @@ export class StatsService {
     return this.prisma.transaction.findMany({
       where: {
         userId,
-        action: 'win',
-        bet_transaction_id: { not: null },
       },
       orderBy: { created_at: 'desc' },
       take: this.LIMIT,
@@ -75,7 +71,6 @@ export class StatsService {
         created_at: true,
         balanceBefore: true,
         balanceAfter: true,
-        multiplier: true,
         profit: true,
         bet_transaction: {
           select: { amount: true },

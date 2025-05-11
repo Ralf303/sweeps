@@ -70,7 +70,6 @@ model Transaction {
 
     balanceBefore Decimal? @db.Decimal(18, 8)
     balanceAfter  Decimal? @db.Decimal(18, 8)
-    multiplier    Float?
     profit        Decimal? @db.Decimal(18, 8)
 
     user   User   @relation(fields: [userId], references: [id])

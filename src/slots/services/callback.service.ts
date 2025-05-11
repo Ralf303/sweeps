@@ -107,7 +107,6 @@ export class CallbackService {
       session_id: data.session_id,
       balanceBefore: balanceBefore.toNumber(),
       balanceAfter: balanceAfter.toNumber(),
-      multiplier: null,
       profit: new Decimal(0).toNumber(),
     });
 
@@ -163,14 +162,10 @@ export class CallbackService {
     const balanceAfter = balanceBefore.plus(winAmount);
     const newBalance = balanceAfter.toNumber();
 
-    const multiplier = betAmount.greaterThan(0)
-      ? winAmount.dividedBy(betAmount).toNumber()
-      : null;
     const profit = betAmount.greaterThan(0)
       ? winAmount.minus(betAmount).toNumber()
       : winAmount.toNumber();
 
-    // Нотификации
     if (winAmount.greaterThan(0)) {
       try {
         const [gameMode, hasFlag] = await Promise.all([
@@ -211,7 +206,6 @@ export class CallbackService {
       bet_transaction_id: data.bet_transaction_id,
       balanceBefore: balanceBefore.toNumber(),
       balanceAfter: balanceAfter.toNumber(),
-      multiplier,
       profit,
     });
 
