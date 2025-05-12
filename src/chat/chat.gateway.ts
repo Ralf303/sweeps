@@ -47,6 +47,13 @@ export class ChatGateway {
     this.server.emit('message:pinned', messageId);
   }
 
+  @SubscribeMessage('message:unpin')
+  @UseGuards(WsAuthGuard, WsAdminGuard)
+  async unpinMessage() {
+    await this.chatService.unpinMessage();
+    this.server.emit('message:unpinned', { sucsefull: true });
+  }
+
   @SubscribeMessage('clearChat')
   @UseGuards(WsAuthGuard, WsAdminGuard)
   async handleClearChat() {

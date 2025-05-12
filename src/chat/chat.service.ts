@@ -40,6 +40,13 @@ export class ChatService {
     });
   }
 
+  async unpinMessage() {
+    return this.prisma.chatMessage.updateMany({
+      where: { isPin: true },
+      data: { isPin: false },
+    });
+  }
+
   async loadMessages(pagination: PaginationDto) {
     console.log('Loading messages with pagination:', pagination);
     const { skip = 0, take = 100 } = pagination;
