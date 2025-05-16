@@ -12,8 +12,7 @@ import {
 } from '@nestjs/common';
 import { SlotegratorService } from './services/slotegrator.service';
 import { InitDemoGameDto, InitGameDto } from './dto/init.demo.game.dto';
-// import * as path from 'path';
-// import * as fs from 'fs';
+
 import { CallbackService } from './services/callback.service';
 import { SignatureService } from './services/signature.service';
 import {
@@ -176,6 +175,8 @@ export class SlotsController {
           game_uuid: 'game_789',
           player_id: 'player_123',
           player_name: 'JohnDoe',
+          game_name: 'MyGame',
+          image_src: 'https://example.com/game.png',
           currency: 'USD',
           session_id: 'session_456',
           device: 'mobile',

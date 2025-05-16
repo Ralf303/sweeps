@@ -37,6 +37,14 @@ export class RedisService {
     return this.redis.get(`game_mode:${playerId}`);
   }
 
+  async setImageSrc(playerId: string, imageSrc: string, ttlSeconds = 3600) {
+    await this.redis.setex(`image_src:${playerId}`, ttlSeconds, imageSrc);
+  }
+
+  async getImageSrc(playerId: string): Promise<string | null> {
+    return this.redis.get(`image_src:${playerId}`);
+  }
+
   async setNotificationFlag(playerId: string, ttlSeconds = 5) {
     await this.redis.setex(`notification_flag:${playerId}`, ttlSeconds, '1');
   }

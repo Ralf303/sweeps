@@ -8,6 +8,7 @@ export class InitDemoGameDto {
 export class InitGameDto {
   game_uuid: string;
   game_name: string;
+  image_src: string;
   language: string;
   return_url: string;
   device: 'desktop' | 'mobile' = 'desktop';

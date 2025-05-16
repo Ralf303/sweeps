@@ -173,16 +173,22 @@ export class CallbackService {
 
     if (winAmount.greaterThan(0)) {
       try {
-        const [gameMode, hasFlag] = await Promise.all([
+        console.log('Зачли победу');
+
+        const [gameMode, imageSrc, hasFlag] = await Promise.all([
           this.redisService.getGameMode(data.player_id),
+          this.redisService.getImageSrc(data.player_id),
           this.redisService.checkNotificationFlag(data.player_id),
         ]);
+        console.log('Считали данные', gameMode, imageSrc, hasFlag);
 
         if (gameMode && !hasFlag) {
           await this.redisService.setNotificationFlag(data.player_id);
+          console.log('Отправляем');
+
           this.liveBetsGateway.sendLiveBetNotification({
             gameName: gameMode,
-            playerName: user.nickname,
+            imageSrc: imageSrc,
             amount: winAmount.toNumber(),
           });
         }

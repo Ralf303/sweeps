@@ -8,9 +8,12 @@ export class LiveGateway {
 
   sendLiveBetNotification(data: {
     gameName: string;
-    playerName: string;
+    imageSrc: string;
     amount: number;
   }) {
+    console.log('Вошли в функцию');
+
     this.server.emit('live_bet', data);
+    console.log('Отправили событие', data);
   }
 }
