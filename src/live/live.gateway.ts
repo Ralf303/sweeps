@@ -11,9 +11,6 @@ export class LiveGateway {
     imageSrc: string;
     amount: number;
   }) {
-    console.log('Вошли в функцию');
-
     this.server.emit('live_bet', data);
-    console.log('Отправили событие', data);
   }
 }

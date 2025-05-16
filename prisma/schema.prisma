@@ -129,3 +129,10 @@ model SocialLink {
     platform String
     url      String
 }
+
+model CryptoCurrency {
+    id        Int      @id @default(autoincrement())
+    name      String
+    symbol    Int
+    createdAt DateTime @default(now())
+}

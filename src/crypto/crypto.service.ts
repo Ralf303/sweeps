@@ -62,21 +62,26 @@ export class CryptoService {
   }
 
   async getCurrencyRate() {
-    const signature = this.generateSignature({});
+    const currencies = await this.prisma.cryptoCurrency.findMany({
+      where: {},
+    });
 
-    const response = await axios.post(
-      'https://app.cryptoprocessing.com/api/v2/currencies/list',
-      {},
-      {
-        headers: {
-          'X-Processing-Key': this.apiKey,
-          'X-Processing-Signature': signature,
-          'Content-Type': 'application/json',
-        },
-      },
-    );
+    return currencies;
+  }
 
-    return response.data;
+  async updateCurrencyRate(id: number, rate: number) {
+    const currency = await this.prisma.cryptoCurrency.findUnique({
+      where: { id },
+    });
+
+    if (!currency) {
+      throw new Error('Currency not found');
+    }
+
+    await this.prisma.cryptoCurrency.update({
+      where: { id },
+      data: { symbol: rate },
+    });
   }
 
   async handleCallback(data: any) {
