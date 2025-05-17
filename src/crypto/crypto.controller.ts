@@ -20,8 +20,10 @@ import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { WebhookGuard } from './guards/webhook-signature.guard';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { UpdateCurriencyDto } from './dto/update.dto';
+import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 
 @ApiTags('crypto')
+@UseGuards(JwtAuthGuard)
 @Controller('crypto')
 export class CryptoController {
   constructor(private readonly cryptoService: CryptoService) {}
