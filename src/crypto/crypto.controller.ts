@@ -1,8 +1,25 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
 import { CryptoService } from './crypto.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { WebhookGuard } from './guards/webhook-signature.guard';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { UpdateCurriencyDto } from './dto/update.dto';
 
 @ApiTags('crypto')
 @Controller('crypto')
@@ -11,9 +28,39 @@ export class CryptoController {
 
   @ApiOperation({ summary: 'Получение курса валют' })
   @ApiResponse({ status: 200, description: 'Курс валют' })
-  @Post('currency')
+  @Get('currency')
   async getCurrencyRate() {
     return await this.cryptoService.getCurrencyRate();
+  }
+
+  @ApiOperation({ summary: 'Обновить ссылку социальной сети по ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID социальной ссылки',
+    example: 1,
+    type: Number,
+  })
+  @ApiBody({
+    description: 'DTO с URL для обновления',
+    type: UpdateCurriencyDto,
+    examples: {
+      example1: {
+        value: { url: 'https://new-url.com' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Обновленная социальная ссылка',
+    type: UpdateCurriencyDto,
+  })
+  @UseGuards(AdminGuard)
+  @Put(':id')
+  async updateSocialLink(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateCurriencyDto,
+  ): Promise<any> {
+    return this.cryptoService.updateCurrencyRate(id, dto.rate);
   }
 
   @ApiOperation({ summary: 'Создание инвойса' })
