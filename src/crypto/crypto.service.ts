@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import axios from 'axios';
 import * as crypto from 'crypto';
@@ -62,7 +62,26 @@ export class CryptoService {
       return response.data;
     } catch (error) {
       console.error('Error creating invoice:', error);
-      throw error;
+
+      if (axios.isAxiosError(error) && error.response) {
+        throw new HttpException(
+          {
+            statusCode: error.response.status,
+            message: 'Error from processing API',
+            apiError: error.response.data,
+          },
+          error.response.status,
+        );
+      }
+
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Internal server error',
+          details: error.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
