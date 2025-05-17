@@ -71,7 +71,11 @@ export class CryptoController {
   @ApiResponse({ status: 400, description: 'Некорректный ввод данных.' })
   @Post('invoice')
   async createInvoice(@Body() dto: CreateInvoiceDto) {
-    return await this.cryptoService.createInvoice(dto);
+    try {
+      return await this.cryptoService.createInvoice(dto);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Post('webhook/invoice')
