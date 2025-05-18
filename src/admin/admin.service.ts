@@ -35,22 +35,10 @@ export class AdminService extends UserService {
     });
   }
 
-  async updateUser(
-    id: string,
-    updateUserDto: { nickname?: string; password?: string },
-  ) {
-    const { nickname, password } = updateUserDto;
-    if (!nickname && !password) {
-      throw new BadRequestException('Nothing to update');
-    }
-
-    const updateData: any = {};
-    if (nickname) updateData.nickname = nickname;
-    if (password) updateData.password = await bcrypt.hash(password, 10);
-
+  async updateUser(id: string, balance: number) {
     return this.prisma.user.update({
       where: { id },
-      data: updateData,
+      data: { balance },
     });
   }
 

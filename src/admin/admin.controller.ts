@@ -57,7 +57,7 @@ export class AdminController {
     return await this.adminService.unbanUser(id);
   }
 
-  @ApiOperation({ summary: 'Update user data (nickname/password)' })
+  @ApiOperation({ summary: 'Update user balance' })
   @ApiResponse({ status: 200, description: 'User updated' })
   @UseGuards(AdminGuard)
   @Post('update/:id')
@@ -65,7 +65,10 @@ export class AdminController {
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return await this.adminService.updateUser(id, updateUserDto);
+    return await this.adminService.updateUser(
+      id,
+      updateUserDto.balance as number,
+    );
   }
 
   @ApiOperation({ summary: 'Получить статистику системы' })

@@ -2,18 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserDto {
   @ApiProperty({
-    example: 'NewNick',
-    description: 'New nickname',
+    example: 100,
+    description: 'New balance amount',
     required: false,
   })
-  nickname?: string;
-
-  @ApiProperty({
-    example: 'newPassword123',
-    description: 'New password',
-    required: false,
-  })
-  password?: string;
+  balance: number;
 }
 
 export class UpdateBalanceDto {
