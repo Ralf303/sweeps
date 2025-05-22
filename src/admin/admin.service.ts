@@ -1,11 +1,7 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
-import * as bcrypt from 'bcrypt';
 import { StatsResponseDto } from './dto/stats.dto';
+import * as fs from 'fs';
 
 @Injectable()
 export class AdminService extends UserService {
@@ -112,5 +108,24 @@ export class AdminService extends UserService {
       totalDeposits: totalDeposits._sum.amount || 0,
       totalBalances: totalBalances._sum.balance || 0,
     };
+  }
+
+  async deleteAvatar(id: string) {
+    const user = await this.getCurrentUser(id);
+
+    if (!user) throw new NotFoundException('User not found');
+    if (!user.avatar) throw new NotFoundException('Avatar not found');
+
+    await new Promise((resolve, reject) => {
+      fs.unlink(`/var/www/uploads/avatars/${user.avatar}`, (err) => {
+        if (err) reject(err);
+        else resolve(null);
+      });
+    });
+
+    return this.prisma.user.update({
+      where: { id },
+      data: { avatar: null },
+    });
   }
 }

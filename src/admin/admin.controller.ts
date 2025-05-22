@@ -83,4 +83,12 @@ export class AdminController {
   async getStats(): Promise<StatsResponseDto> {
     return await this.adminService.getUserStats();
   }
+
+  @ApiOperation({ summary: 'Удалить аватарку юзера по id' })
+  @ApiResponse({ status: 200, description: 'Avatar deleted' })
+  @UseGuards(AdminGuard)
+  @Post('delete-avatar/:id')
+  async deleteAvatar(@Param('id') id: string) {
+    return await this.adminService.deleteAvatar(id);
+  }
 }
