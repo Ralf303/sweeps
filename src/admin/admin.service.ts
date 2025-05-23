@@ -117,7 +117,7 @@ export class AdminService extends UserService {
     if (!user.avatar) throw new NotFoundException('Avatar not found');
 
     await new Promise((resolve, reject) => {
-      fs.unlink(`/var/www/uploads/avatars/${user.avatar}`, (err) => {
+      fs.unlink(`/var/www${user.avatar}`, (err) => {
         if (err) reject(err);
         else resolve(null);
       });
