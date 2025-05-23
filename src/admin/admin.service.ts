@@ -111,21 +111,26 @@ export class AdminService extends UserService {
   }
 
   async deleteAvatar(id: string) {
-    const user = await this.getCurrentUser(id);
+    try {
+      const user = await this.getCurrentUser(id);
 
-    if (!user) throw new NotFoundException('User not found');
-    if (!user.avatar) throw new NotFoundException('Avatar not found');
+      if (!user) throw new NotFoundException('User not found');
+      if (!user.avatar) throw new NotFoundException('Avatar not found');
 
-    await new Promise((resolve, reject) => {
-      fs.unlink(`/var/www${user.avatar}`, (err) => {
-        if (err) reject(err);
-        else resolve(null);
+      await new Promise((resolve, reject) => {
+        fs.unlink(`/var/www${user.avatar}`, (err) => {
+          if (err) reject(err);
+          else resolve(null);
+        });
       });
-    });
 
-    return this.prisma.user.update({
-      where: { id },
-      data: { avatar: null },
-    });
+      return this.prisma.user.update({
+        where: { id },
+        data: { avatar: null },
+      });
+    } catch (error) {
+      console.error('Error deleting avatar:', error);
+      throw error;
+    }
   }
 }
