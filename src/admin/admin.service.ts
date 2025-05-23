@@ -126,7 +126,7 @@ export class AdminService extends UserService {
 
       return this.prisma.user.update({
         where: { id },
-        data: { avatar: null },
+        data: { avatar: '' },
       });
     } catch (error) {
       console.error('Error deleting avatar:', error);
