@@ -1,10 +1,41 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 import { StatsResponseDto } from './dto/stats.dto';
 import * as fs from 'fs';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { LogsService } from 'src/adminLogger/logs.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AdminService extends UserService {
+  constructor(
+    protected readonly prisma: PrismaService,
+    private readonly logsService: LogsService,
+  ) {
+    super(prisma);
+  }
+
+  async updateUser(id: string, balance: number) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    const previous = user.balance;
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { balance },
+    });
+
+    const date = new Date().toISOString();
+    const amount = `${balance - previous >= 0 ? '+' : ''}${balance - previous}`;
+    await this.logsService.createLog(
+      id,
+      date,
+      amount,
+      Number(previous),
+      Number(updated.balance),
+    );
+
+    return updated;
+  }
+
   async banUser(id: string) {
     const user = await this.getCurrentUser(id);
     if (!user) throw new NotFoundException('User not found');
@@ -28,13 +59,6 @@ export class AdminService extends UserService {
       take,
       where: options.isBanned ? { isBanned: true } : undefined,
       orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async updateUser(id: string, balance: number) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { balance },
     });
   }
 

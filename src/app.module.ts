@@ -14,6 +14,7 @@ import { AdminModule } from './admin/admin.module';
 import { SocialsModule } from './socials/socials.module';
 import { LiveModule } from './live/live.module';
 import { StatsModule } from './stats/stats.module';
+import { LogsModule } from './adminLogger/logs.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { StatsModule } from './stats/stats.module';
     SocialsModule,
     LiveModule,
     StatsModule,
+    LogsModule,
   ],
 })
 export class AppModule {}

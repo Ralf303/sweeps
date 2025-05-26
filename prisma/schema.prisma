@@ -36,6 +36,7 @@ model User {
     updatedAt   DateTime      @updatedAt
     ChatMessage ChatMessage[]
     Crypto      Crypto[]
+    Log         Log[]
 }
 
 model Crypto {
@@ -135,4 +136,14 @@ model CryptoCurrency {
     name      String
     symbol    Int
     createdAt DateTime @default(now())
+}
+
+model Log {
+    id       String  @id @default(cuid())
+    date     String
+    amount   String
+    previous Decimal @default(0) @db.Decimal(18, 8)
+    new      Decimal @db.Decimal(18, 8)
+    user     User    @relation(fields: [userId], references: [id])
+    userId   String
 }
