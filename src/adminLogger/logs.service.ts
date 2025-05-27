@@ -19,31 +19,29 @@ export class LogsService {
   }
 
   async getAllLogs(pagination: PaginationDto) {
-    const { page, limit } = pagination;
-    const skip = (page - 1) * limit;
+    const { start = 0 } = pagination;
     const [data, total] = await Promise.all([
       this.prisma.log.findMany({
-        skip,
-        take: limit,
+        skip: start,
+        take: 100,
         orderBy: { date: 'desc' },
       }),
       this.prisma.log.count(),
     ]);
-    return { data, total, page, limit };
+    return { data, total, start };
   }
 
   async getUserLogs(userId: string, pagination: PaginationDto) {
-    const { page, limit } = pagination;
-    const skip = (page - 1) * limit;
+    const { start = 0 } = pagination;
     const [data, total] = await Promise.all([
       this.prisma.log.findMany({
         where: { userId },
-        skip,
-        take: limit,
+        skip: start,
+        take: 100,
         orderBy: { date: 'desc' },
       }),
       this.prisma.log.count({ where: { userId } }),
     ]);
-    return { data, total, page, limit };
+    return { data, total, start };
   }
 }
