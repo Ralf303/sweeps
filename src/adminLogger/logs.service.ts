@@ -22,7 +22,7 @@ export class LogsService {
     const { start = 0 } = pagination;
     const [data, total] = await Promise.all([
       this.prisma.log.findMany({
-        skip: start,
+        skip: Number(start),
         take: 100,
         orderBy: { date: 'desc' },
       }),
@@ -36,7 +36,7 @@ export class LogsService {
     const [data, total] = await Promise.all([
       this.prisma.log.findMany({
         where: { userId },
-        skip: start,
+        skip: Number(start),
         take: 100,
         orderBy: { date: 'desc' },
       }),
