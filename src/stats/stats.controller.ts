@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { StatsService } from './stats.service';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
+import { Period } from 'src/slots/types/period';
 
 @ApiTags('Stats')
 @ApiBearerAuth()
@@ -20,38 +21,38 @@ export class StatsController {
   @ApiOperation({
     summary: 'Get leaderboard by maximum multiplier (x) for wins',
   })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({
-    name: 'offset',
+    name: 'period',
     required: false,
-    type: Number,
-    description: 'Pagination offset, default 0',
+    type: String,
+    enum: ['daily', 'weekly', 'monthly', 'global'],
+    description: 'Период топа (default: global)',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns list of top wins sorted by multiplier',
-  })
-  getLeaderboard(@Query('offset') offset = '0') {
-    console.log('getLeaderboard', offset);
-    return this.stats.getLeaderboardByMaxX(+offset);
+  getLeaderboard(
+    @Query('offset') offset = '0',
+    @Query('period')
+    period: Period = 'global',
+  ) {
+    return this.stats.getLeaderboardByMaxX(+offset, period);
   }
 
   @Get('referrals')
-  @ApiOperation({
-    summary: "Get user's referrals ranked by total losses (globalLose)",
-  })
+  @ApiOperation({ summary: "Get user's referrals ranked by total losses" })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({
-    name: 'offset',
+    name: 'period',
     required: false,
-    type: Number,
-    description: 'Pagination offset, default 0',
+    enum: ['daily', 'weekly', 'monthly', 'global'],
+    description: 'Период топа (default: global)',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns list of referrals with their globalLose stats',
-  })
-  getReferrals(@Req() req: any, @Query('offset') offset = '0') {
-    console.log('getReferrals', req.user.id, offset);
-    return this.stats.getUserReferralsStats(req.user.id, +offset);
+  getReferrals(
+    @Req() req: any,
+    @Query('offset') offset = '0',
+    @Query('period')
+    period: Period = 'global',
+  ) {
+    return this.stats.getUserReferralsStats(req.user.id, +offset, period);
   }
 
   @Get('crypto')
@@ -81,14 +82,24 @@ export class StatsController {
     type: Number,
     description: 'Pagination offset, default 0',
   })
+  @ApiQuery({
+    name: 'period',
+    required: false,
+    enum: ['daily', 'weekly', 'monthly', 'global'],
+    description: 'Период выборки (default: global)',
+  })
   @ApiResponse({
     status: 200,
     description:
       'Returns game history records with balanceBefore, bet, multiplier, profit, balanceAfter',
   })
-  getGames(@Req() req: any, @Query('offset') offset = '0') {
-    console.log('getGames', req.user.id, offset);
-
-    return this.stats.getGameHistory(req.user.id, +offset);
+  getGames(
+    @Req() req: any,
+    @Query('offset') offset = '0',
+    @Query('period')
+    period: Period = 'global',
+  ) {
+    console.log('getGames', req.user.id, offset, period);
+    return this.stats.getGameHistory(req.user.id, +offset, period);
   }
 }

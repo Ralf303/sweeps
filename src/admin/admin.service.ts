@@ -62,7 +62,7 @@ export class AdminService extends UserService {
     });
   }
 
-  async getUserStats(): Promise<StatsResponseDto> {
+  async getGlobalStats(): Promise<StatsResponseDto> {
     const now = new Date();
     const startOfToday = new Date(now.setHours(0, 0, 0, 0));
     const startOfWeek = new Date(new Date().setDate(now.getDate() - 7));

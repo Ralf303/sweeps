@@ -71,17 +71,17 @@ export class AdminController {
     );
   }
 
-  @ApiOperation({ summary: 'Получить статистику системы' })
+  @ApiOperation({ summary: 'Get global Stats' })
   @ApiResponse({
     status: 200,
-    description: 'Статистика успешно получена',
+    description: 'Successfully retrieved system stats',
     type: StatsResponseDto,
   })
   @ApiResponse({ status: 500, description: 'Внутренняя ошибка сервера' })
   @UseGuards(AdminGuard)
   @Get('stats')
   async getStats(): Promise<StatsResponseDto> {
-    return await this.adminService.getUserStats();
+    return await this.adminService.getGlobalStats();
   }
 
   @ApiOperation({ summary: 'Удалить аватарку юзера по id' })

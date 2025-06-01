@@ -171,20 +171,20 @@ export class CallbackService {
       ? winAmount.minus(betAmount).toNumber()
       : winAmount.toNumber();
 
+    const gameName = await this.redisService.getGameMode(data.player_id);
+    const gameImage = await this.redisService.getImageSrc(data.game_uuid);
     if (winAmount.greaterThan(0)) {
       try {
-        const [gameMode, imageSrc, hasFlag] = await Promise.all([
-          this.redisService.getGameMode(data.player_id),
-          this.redisService.getImageSrc(data.player_id),
-          this.redisService.checkNotificationFlag(data.player_id),
-        ]);
+        const hasFlag = await this.redisService.checkNotificationFlag(
+          data.player_id,
+        );
 
-        if (gameMode && !hasFlag) {
+        if (gameName && !hasFlag) {
           await this.redisService.setNotificationFlag(data.player_id);
 
           this.liveBetsGateway.sendLiveBetNotification({
-            gameName: gameMode,
-            imageSrc: imageSrc,
+            gameName: gameName,
+            imageSrc: gameImage,
             amount: winAmount.toNumber(),
           });
         }
@@ -201,8 +201,8 @@ export class CallbackService {
         new Decimal(0),
       ).toNumber(),
     );
-    const gameName = await this.redisService.getGameMode(data.player_id);
     const bet = await this.redisService.getBetTransaction(data.player_id);
+
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
@@ -217,6 +217,7 @@ export class CallbackService {
       profit,
       gameName,
       bet,
+      imageUrl: gameImage,
     });
 
     return {

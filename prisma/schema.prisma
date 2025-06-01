@@ -20,6 +20,8 @@ model User {
     referredById    String?
     referralLevel   Int     @default(1)
     dailyLose       Float   @default(0)
+    weeklyLose      Float   @default(0)
+    monthlyLose     Float   @default(0)
     globalLose      Float   @default(0)
     referralAllLose Float   @default(0)
     isBanned        Boolean @default(false)
@@ -74,6 +76,7 @@ model Transaction {
     profit        Decimal? @db.Decimal(18, 8)
     gameName      String?
     bet           Decimal? @db.Decimal(18, 8)
+    gameAvatarUrl String?  @default("")
 
     user   User   @relation(fields: [userId], references: [id])
     userId String

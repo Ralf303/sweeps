@@ -42,11 +42,7 @@ export class ReferalService {
         dailyLose: { gt: 0 },
         referredById: { not: null },
       },
-      select: {
-        id: true,
-        dailyLose: true,
-        referredById: true,
-      },
+      select: { id: true, dailyLose: true, referredById: true },
     });
 
     for (const { id: userId, dailyLose, referredById } of losers) {
@@ -63,7 +59,6 @@ export class ReferalService {
 
       const rate = this.getCommissionRate(referrer.referralLevel);
       const payout = dailyLose * rate;
-
       const newTotalLose = referrer.referralAllLose + dailyLose;
       const newLevel = this.getLevelByTotalLose(newTotalLose);
 
@@ -79,16 +74,30 @@ export class ReferalService {
 
       await this.prisma.user.update({
         where: { id: userId },
-        data: { dailyLose: 0 },
+        data: {
+          dailyLose: 0,
+          weeklyLose: { increment: dailyLose },
+          monthlyLose: { increment: dailyLose },
+        },
       });
 
       this.logger.log(
-        `User ${userId} lost ${dailyLose}, paid ${payout.toFixed(
-          2,
-        )} to ${referrer.id}, new level ${newLevel}`,
+        `User ${userId} lost ${dailyLose}, paid ${payout.toFixed(2)} to ${referrer.id}, new level ${newLevel}`,
       );
     }
 
     this.logger.debug('Завершили выплату реферальных комиссий');
+  }
+
+  @Cron('5 1 * * 1', { timeZone: 'Europe/Berlin' })
+  async resetWeeklyLose() {
+    await this.prisma.user.updateMany({ data: { weeklyLose: 0 } });
+    this.logger.log('Сбросили weeklyLose для всех пользователей');
+  }
+
+  @Cron('10 1 1 * *', { timeZone: 'Europe/Berlin' })
+  async resetMonthlyLose() {
+    await this.prisma.user.updateMany({ data: { monthlyLose: 0 } });
+    this.logger.log('Сбросили monthlyLose для всех пользователей');
   }
 }

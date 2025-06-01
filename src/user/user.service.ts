@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UserResponseDto } from './dto/user.dto';
 import { USER_SELECT_FIELDS } from './utils/user.select';
+import { TransactionDto } from './dto/transaction.dto';
 
 @Injectable()
 export class UserService {
@@ -77,23 +78,7 @@ export class UserService {
     });
   }
 
-  async saveTransaction(data: {
-    player_id: string;
-    transaction_id: string;
-    action: string;
-    amount: number;
-    currency?: string;
-    round_id?: string;
-    game_uuid?: string;
-    session_id?: string;
-    bet_transaction_id?: string;
-    balanceBefore?: number;
-    balanceAfter?: number;
-    multiplier?: number | null;
-    profit?: number;
-    gameName?: string;
-    bet?: number;
-  }) {
+  async saveTransaction(data: TransactionDto) {
     return this.prisma.transaction.create({
       data: {
         transaction_id: data.transaction_id,
@@ -110,6 +95,7 @@ export class UserService {
         profit: data.profit,
         gameName: data.gameName,
         bet: data.bet,
+        gameAvatarUrl: data.imageUrl,
       },
     });
   }
