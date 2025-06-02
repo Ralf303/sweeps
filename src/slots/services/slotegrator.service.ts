@@ -65,6 +65,8 @@ export class SlotegratorService {
 
       await this.redisService.setGameMode(params.player_id, params.game_name);
       await this.redisService.setImageSrc(params.player_id, params.image_src);
+      console.log(params.image_src);
+
       return response.data;
     } catch (error: any) {
       console.error(error);

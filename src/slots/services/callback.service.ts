@@ -104,6 +104,7 @@ export class CallbackService {
 
     const gameName = await this.redisService.getGameMode(data.player_id);
     const gameImage = await this.redisService.getImageSrc(data.player_id);
+    console.log(gameImage);
 
     await this.userService.saveTransaction({
       player_id: data.player_id,
@@ -208,6 +209,7 @@ export class CallbackService {
       ).toNumber(),
     );
     const bet = await this.redisService.getBetTransaction(data.player_id);
+    console.log(gameImage);
 
     await this.userService.saveTransaction({
       player_id: data.player_id,
