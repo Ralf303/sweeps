@@ -8,8 +8,8 @@ export enum PeriodMap {
 }
 
 export const fieldMap = {
-  daily: 'dailyLosses',
-  weekly: 'weeklyLosses',
-  monthly: 'monthlyLosses',
-  global: 'totalLosses',
+  daily: 'dailyLose',
+  weekly: 'weeklyLose',
+  monthly: 'monthlyLose',
+  global: 'globalLose',
 } as const;

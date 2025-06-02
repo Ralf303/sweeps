@@ -143,7 +143,12 @@ export class StatsService {
     }
 
     return this.prisma.transaction.findMany({
-      where,
+      where: {
+        ...where,
+        action: {
+          in: ['bet', 'win'],
+        },
+      },
       orderBy: { created_at: 'desc' },
       take: this.LIMIT,
       skip: offset,

@@ -102,10 +102,16 @@ export class CallbackService {
       new Decimal(user.dailyLose).plus(betAmount).toNumber(),
     );
 
+    const gameName = await this.redisService.getGameMode(data.player_id);
+    const gameImage = await this.redisService.getImageSrc(data.player_id);
+
     await this.userService.saveTransaction({
       player_id: data.player_id,
       transaction_id: data.transaction_id,
       action: 'bet',
+      bet: betAmount.toNumber(),
+      gameName: gameName,
+      imageUrl: gameImage,
       amount: betAmount.toNumber(),
       currency: data.currency,
       round_id: data.round_id,
@@ -172,7 +178,7 @@ export class CallbackService {
       : winAmount.toNumber();
 
     const gameName = await this.redisService.getGameMode(data.player_id);
-    const gameImage = await this.redisService.getImageSrc(data.game_uuid);
+    const gameImage = await this.redisService.getImageSrc(data.player_id);
     if (winAmount.greaterThan(0)) {
       try {
         const hasFlag = await this.redisService.checkNotificationFlag(
