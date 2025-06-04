@@ -132,7 +132,7 @@ model SocialLink {
     id       Int    @id @default(autoincrement())
     platform String
     url      String
-    icon     String
+    icon     String @default("")
 }
 
 model CryptoCurrency {
