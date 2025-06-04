@@ -6,6 +6,9 @@ import {
   Param,
   ParseIntPipe,
   UseGuards,
+  Post,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,6 +21,9 @@ import { SocialsService } from './socials.service';
 import { UpdateSocialLinkDto } from './dto/socials.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('socials')
 @UseGuards(JwtAuthGuard)
@@ -64,5 +70,27 @@ export class SocialsController {
     @Body() dto: UpdateSocialLinkDto,
   ): Promise<any> {
     return this.socialsService.updateLink(id, dto.url);
+  }
+
+  @UseGuards(AdminGuard)
+  @Post(':id/icon')
+  @UseInterceptors(
+    FileInterceptor('icon', {
+      storage: diskStorage({
+        destination: '/var/www/uploads/icons',
+        filename: (_, file, cb) => {
+          const uniqueSuffix = Date.now();
+          const ext = extname(file.originalname);
+          cb(null, `icon-${uniqueSuffix}${ext}`);
+        },
+      }),
+    }),
+  )
+  async uploadIcon(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    const iconPath = `/uploads/icons/${file.filename}`;
+    return this.socialsService.updateIcon(id, iconPath);
   }
 }

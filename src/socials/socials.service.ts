@@ -15,4 +15,11 @@ export class SocialsService {
       data: { url },
     });
   }
+
+  async updateIcon(id: number, iconPath: string): Promise<any> {
+    return this.prisma.socialLink.update({
+      where: { id },
+      data: { icon: iconPath },
+    });
+  }
 }
