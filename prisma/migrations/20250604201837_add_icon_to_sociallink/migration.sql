@@ -5,4 +5,4 @@ Warnings:
 
 */
 -- AlterTable
-ALTER TABLE "SocialLink" ADD COLUMN "icon" DEFAULT "" TEXT NOT NULL;
+ALTER TABLE "SocialLink" ADD COLUMN "icon" TEXT NOT NULL;

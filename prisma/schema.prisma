@@ -129,10 +129,10 @@ model ChatMessage {
 }
 
 model SocialLink {
-    id       Int    @id @default(autoincrement())
+    id       Int     @id @default(autoincrement())
     platform String
     url      String
-    icon     String @default("")
+    icon     String? @default("")
 }
 
 model CryptoCurrency {
