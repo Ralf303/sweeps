@@ -19,7 +19,7 @@ export class SocialsService {
   async updateIcon(id: number, iconPath: string): Promise<any> {
     return this.prisma.socialLink.update({
       where: { id },
-      data: { icon: iconPath },
+      data: { image: iconPath },
     });
   }
 }
