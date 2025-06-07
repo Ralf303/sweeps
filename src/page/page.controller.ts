@@ -61,8 +61,12 @@ export class PageController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload or replace page icon' })
   @ApiBody({
-    description: 'Icon file to upload',
-    schema: { example: { icon: '<binary file>' } },
+    schema: {
+      type: 'object',
+      properties: {
+        image: { type: 'string', format: 'binary' },
+      },
+    },
   })
   @UseInterceptors(
     FileInterceptor('icon', {
