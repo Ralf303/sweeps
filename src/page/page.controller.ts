@@ -64,7 +64,7 @@ export class PageController {
     schema: {
       type: 'object',
       properties: {
-        image: { type: 'string', format: 'binary' },
+        icon: { type: 'string', format: 'binary' },
       },
     },
   })
