@@ -36,15 +36,15 @@ export class PageController {
   @UseGuards(AdminGuard)
   @Post('title')
   @ApiOperation({ summary: 'Update page title' })
-  updateTitle(@Body() dto: string) {
-    return this.pageService.update(1, dto);
+  updateTitle(@Body() dto: { title: string }) {
+    return this.pageService.update(1, dto.title);
   }
 
   @UseGuards(AdminGuard)
   @Post('description')
   @ApiOperation({ summary: 'Update page description' })
-  updateDescription(@Body() dto: string) {
-    return this.pageService.update(2, dto);
+  updateDescription(@Body() dto: { description: string }) {
+    return this.pageService.update(2, dto.description);
   }
 
   @UseGuards(AdminGuard)
