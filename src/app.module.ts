@@ -15,6 +15,7 @@ import { SocialsModule } from './socials/socials.module';
 import { LiveModule } from './live/live.module';
 import { StatsModule } from './stats/stats.module';
 import { LogsModule } from './adminLogger/logs.module';
+import { PageModule } from './page/page.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { LogsModule } from './adminLogger/logs.module';
     LiveModule,
     StatsModule,
     LogsModule,
+    PageModule,
   ],
 })
 export class AppModule {}

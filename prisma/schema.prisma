@@ -152,3 +152,9 @@ model Log {
     user     User    @relation(fields: [userId], references: [id])
     userId   String
 }
+
+model Page {
+    id    Int    @id @default(autoincrement())
+    name  String
+    value String
+}
