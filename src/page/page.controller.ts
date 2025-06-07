@@ -12,6 +12,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiTags,
@@ -36,12 +37,20 @@ export class PageController {
   @UseGuards(AdminGuard)
   @Post('title')
   @ApiOperation({ summary: 'Update page title' })
+  @ApiBody({
+    description: 'New title for the page',
+    schema: { example: { title: 'Homepage' } },
+  })
   updateTitle(@Body() dto: { title: string }) {
     return this.pageService.update(1, dto.title);
   }
 
   @UseGuards(AdminGuard)
   @Post('description')
+  @ApiBody({
+    description: 'New description for the page',
+    schema: { example: { description: 'Welcome to our homepage' } },
+  })
   @ApiOperation({ summary: 'Update page description' })
   updateDescription(@Body() dto: { description: string }) {
     return this.pageService.update(2, dto.description);
