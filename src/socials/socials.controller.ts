@@ -18,7 +18,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { SocialsService } from './socials.service';
-import { UpdateSocialLinkDto } from './dto/socials.dto';
+import { UpdateSocialLinkDto, UpdateSocialTitleDto } from './dto/socials.dto';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -45,7 +45,7 @@ export class SocialsController {
   @ApiOperation({ summary: 'Обновить ссылку социальной сети по ID' })
   @ApiParam({
     name: 'id',
-    description: 'ID социальной ссылки',
+    description: 'ID социальной сети',
     example: 1,
     type: Number,
   })
@@ -64,12 +64,42 @@ export class SocialsController {
     type: UpdateSocialLinkDto,
   })
   @UseGuards(AdminGuard)
-  @Put(':id')
+  @Put(':id/link')
   async updateSocialLink(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSocialLinkDto,
   ): Promise<any> {
     return this.socialsService.updateLink(id, dto.url);
+  }
+
+  @ApiOperation({ summary: 'Обнвовить title social link' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID социальной сети',
+    example: 1,
+    type: Number,
+  })
+  @ApiBody({
+    description: 'DTO с URL для обновления',
+    type: UpdateSocialTitleDto,
+    examples: {
+      example1: {
+        value: { title: 'title' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Обновленная социальная ссылка',
+    type: UpdateSocialTitleDto,
+  })
+  @UseGuards(AdminGuard)
+  @Put(':id/title')
+  async updateSocialTitle(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSocialTitleDto,
+  ): Promise<any> {
+    return this.socialsService.updateTitle(id, dto.title);
   }
 
   @UseGuards(AdminGuard)

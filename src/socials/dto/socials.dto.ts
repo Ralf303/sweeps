@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUrl } from 'class-validator';
+import { IsString, IsUrl } from 'class-validator';
 
 export class UpdateSocialLinkDto {
   @ApiProperty({
@@ -8,4 +8,13 @@ export class UpdateSocialLinkDto {
   })
   @IsUrl()
   url: string;
+}
+
+export class UpdateSocialTitleDto {
+  @ApiProperty({
+    example: 'Net inst',
+    description: 'new title',
+  })
+  @IsString()
+  title: string;
 }
