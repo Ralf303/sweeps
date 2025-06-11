@@ -16,6 +16,8 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiBearerAuth,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { SocialsService } from './socials.service';
 import { UpdateSocialLinkDto, UpdateSocialTitleDto } from './dto/socials.dto';
@@ -27,6 +29,7 @@ import { extname } from 'path';
 
 @ApiTags('socials')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('socials')
 export class SocialsController {
   constructor(private readonly socialsService: SocialsService) {}
@@ -116,6 +119,20 @@ export class SocialsController {
       }),
     }),
   )
+  @ApiOperation({ summary: 'Upload icon for a social link' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        icon: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Icon updated successfully' })
   async uploadIcon(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFile() file: Express.Multer.File,
