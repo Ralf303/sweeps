@@ -6,10 +6,29 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ChatService {
   constructor(private prisma: PrismaService) {}
 
-  async createMessage({ userId, text }: { userId: string; text: string }) {
+  async createMessage({
+    userId,
+    text,
+    replyToId,
+  }: {
+    userId: string;
+    text: string;
+    replyToId?: string;
+  }) {
     return this.prisma.chatMessage.create({
-      data: { userId, text },
-      include: { user: true },
+      data: {
+        userId,
+        text,
+        replyToId,
+      },
+      include: {
+        user: true,
+        replyTo: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
   }
 
@@ -48,7 +67,6 @@ export class ChatService {
   }
 
   async loadMessages(pagination: PaginationDto) {
-    console.log('Loading messages with pagination:', pagination);
     const { skip = 0, take = 100 } = pagination;
     const messages = await this.prisma.chatMessage.findMany({
       orderBy: { createdAt: 'desc' },

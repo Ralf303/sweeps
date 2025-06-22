@@ -157,4 +157,11 @@ export class AdminService extends UserService {
       throw error;
     }
   }
+
+  async changeUserRole(id: string, role: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { role },
+    });
+  }
 }

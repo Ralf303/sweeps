@@ -119,11 +119,14 @@ model faq {
 }
 
 model ChatMessage {
-    id        String   @id @default(uuid())
+    id        String        @id @default(uuid())
     userId    String
     text      String
-    createdAt DateTime @default(now())
-    isPin     Boolean  @default(false)
+    createdAt DateTime      @default(now())
+    isPin     Boolean       @default(false)
+    replyToId String?
+    replyTo   ChatMessage?  @relation("ReplyMessage", fields: [replyToId], references: [id])
+    replies   ChatMessage[] @relation("ReplyMessage")
 
     user User @relation(fields: [userId], references: [id])
 }

@@ -21,12 +21,18 @@ export class ChatGateway {
   @UseGuards(WsAuthGuard)
   async handleMessage(
     @ConnectedSocket() client: any,
-    @MessageBody() text: string,
+    @MessageBody()
+    data: {
+      text: string;
+      replyToId?: string;
+    },
   ) {
     const message = await this.chatService.createMessage({
       userId: client.user.id,
-      text,
+      text: data.text,
+      replyToId: data.replyToId,
     });
+
     this.server.emit('message:new', message);
   }
 

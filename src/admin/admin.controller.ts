@@ -91,4 +91,15 @@ export class AdminController {
   async deleteAvatar(@Param('id') id: string) {
     return await this.adminService.deleteAvatar(id);
   }
+
+  @ApiOperation({ summary: 'Change user role' })
+  @ApiResponse({ status: 200, description: 'User role updated' })
+  @UseGuards(AdminGuard)
+  @Post('change-role/:id')
+  async changeUserRole(
+    @Param('id') id: string,
+    @Body('role') role: 'user' | 'admin' | 'moderator',
+  ) {
+    return await this.adminService.changeUserRole(id, role);
+  }
 }
